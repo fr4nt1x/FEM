@@ -5,7 +5,9 @@ from FiniteElement import FiniteElement
 
 
 Fem = FiniteElement(np.array([[1.,1],[0,2],[0,1]]))
-Fem.calculateTransform(0)
+print(Fem.triangulation)
+Fem.calculateElementStiffnessMatrix(0)
+
 #rhs = lambda x,y: -0.5*x+-0.5*y+0.5 
 #fig = plt.figure()
 #ax = Axes3D(fig);

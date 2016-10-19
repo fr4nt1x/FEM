@@ -1,4 +1,5 @@
 from scipy.spatial import Delaunay
+from scipy import sparse
 from itertools import product
 import math
 
@@ -50,15 +51,24 @@ class FiniteElement:
         
         for row,column in product(range(3),range(3)):
             elementStiffnessMatrix[row,column] =0.5*determinant *np.dot(np.dot(np.dot(self.PDEMatrix,transformMatrixInv.T),self.gradBasis[row]),np.dot(transformMatrixInv.T,self.gradBasis[column]))
-        print(elementStiffnessMatrix)
         return elementStiffnessMatrix
 
     def calculateGlobalStiffnessMatrix(self):
         """Loops over all elements, calculates the element Stiffness and assembles 
-            it into a global Matrix"""
+            it inCSRto a global Matrix"""
+        
+        globalRowIndices = []
+        globalColumnIndices=[]
+        globalData = []
         for ele,triPoints in enumerate(self.triangulation.simplices):
-            print(ele,triPoints)
-    
+            eleStiffness = self.calculateElementStiffnessMatrix(ele)
+            for row,column in product(range(3),range(3)):
+                globalRowIndices.append(triPoints[row])
+                globalColumnIndices.append(triPoints[column])
+                globalData.append(eleStiffness[row,column])
+        self.GlobalStiffness = sparse.coo_matrix((globalData,(globalRowIndices,globalColumnIndices)),shape=(np.size(self.triangulation.points),np.size(self.triangulation.points))).tocsr() 
+        print(self.GlobalStiffness.toarray())
+            
     def Global2Local(self,globalIndex):
         """returns for a given global index the pair of local ones"""
         ele = int(math.floor(globalIndex / 3))

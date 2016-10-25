@@ -15,6 +15,7 @@ class FiniteElement:
         self.referenceElement = np.array([[0,0],[1.,0],[0,1]])
         self.triangulation = Delaunay(points)
         self.numberDOF = np.size(self.triangulation.points[:,0])
+        self.maxDiam = 0
         
         #self.findIndicesForPrescribedValues(prescribedValues)
         self.prescribedValues = prescribedValues
@@ -24,7 +25,7 @@ class FiniteElement:
         self.linearBasis.append(lambda x,y : y)
 
         #Holds integral of two basisfunctons in one reference triangle
-        self.elementaryBasisMatrix = 1/12*np.array([[1,0.5,0.5],[0.5,1,0.5],[0.5,0.5,1]])
+        self.elementaryBasisMatrix = 1.0/12*np.array([[1,0.5,0.5],[0.5,1,0.5],[0.5,0.5,1]])
         
         self.gradBasis = []
         self.gradBasis.append(np.array([-1,-1])) 
@@ -41,6 +42,7 @@ class FiniteElement:
         """
         
         trianglePoints = self.triangulation.points[self.triangulation.simplices.copy()[triangleIndex]]
+        self.maxDiam = max(np.linalg.norm(trianglePoints[0]-trianglePoints[1]),np.linalg.norm(trianglePoints[0]-trianglePoints[2]),np.linalg.norm(trianglePoints[2]-trianglePoints[1]),self.maxDiam)
         #hold the coordinates with 1 appended as last row
         referenceCoord = np.array([self.referenceElement[:,0],self.referenceElement[:,1],np.array([1,1,1])])       
         transformedCoord = np.array([trianglePoints[:,0],trianglePoints[:,1],np.array([1,1,1])])
@@ -72,10 +74,10 @@ class FiniteElement:
         globalColumnIndices=[]
         globalData = []
         for ele,triPoints in enumerate(self.triangulation.simplices):
-            print("element:",ele)
+            print("element:"+str(ele)+"/"+ str(len(self.triangulation.simplices)))
             eleStiffness = self.calculateElementStiffnessMatrix(ele)
             for row in range(3):
-                if triPoints[row] in self.prescribedValues[:,0]:
+                if self.prescribedValues != [] and triPoints[row] in self.prescribedValues[:,0]:
                     continue
                 else:
                     for column in range(3):

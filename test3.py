@@ -6,22 +6,22 @@ import math
 from numpy import linalg
 from FiniteElement import FiniteElement
 
-sol = lambda x : np.exp(x[0]+0.2*x[1])
+sol = lambda x : np.exp(x[0]+x[1])
 nx =50
 ny =50
 
 
 def f(x):
-    result = -1.04* np.exp(x[0]+0.2*x[1])
+    result = -1.*np.exp(x[0]+x[1])
     return result
 
 error= []
 pointerror= []
 boundary=[]
 
-for n in range(3,25,1):
+for n in range(3,4,1):
     points = []
-    for x in np.linspace(0.5,1,n):
+    for x in np.linspace(0,1,n):
         for y in np.linspace(0,1,n):
             points.append([x,y])
 
@@ -30,11 +30,11 @@ for n in range(3,25,1):
     minimum0 = min(np.array(points)[:,0])
     minimum1 = min(np.array(points)[:,1])
 
-    boundaryValuesx = [[k,np.exp(1.0+0.2*x[1])] for k,x in enumerate(points) if x[0]==maximum0 ]
-    boundaryValuesy = [[k,np.exp(x[0]+0.2)] for k,x in enumerate(points) if x[1]==maximum1 and not x[0]==maximum0 and not x[0]==minimum0 ]
+    boundaryValuesx = [[k,sol(x)] for k,x in enumerate(points) if x[0]==maximum0 ]
+    boundaryValuesy = [[k,sol(x)] for k,x in enumerate(points) if x[1]==maximum1 and not x[0]==maximum0 and not x[0]==minimum0 ]
 
-    boundaryValuesx += [[k,np.exp(0.5+0.2*x[1])] for k,x in enumerate(points) if x[0]==minimum0 ]
-    boundaryValuesy += [[k,np.exp(x[0])] for k,x in enumerate(points) if x[1]==minimum1 and not x[0]==maximum0 and not x[0]==minimum0]
+    boundaryValuesx += [[k,sol(x)] for k,x in enumerate(points) if x[0]==minimum0 ]
+    boundaryValuesy += [[k,sol(x)] for k,x in enumerate(points) if x[1]==minimum1 and not x[0]==maximum0 and not x[0]==minimum0]
 
     boundary = np.array(boundaryValuesx + boundaryValuesy)
 
@@ -43,16 +43,19 @@ for n in range(3,25,1):
     Fem.calculateRightHandSide()
     Fem.solve()
     error.append([Fem.maxDiam,np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.array(Fem.solution))])
+    print(Fem.triangulation.points)
+    #print(Fem.solution)
+    print(Fem.rightHandSide)
+    print([f(x) for x in Fem.triangulation.points])
     pointlist=[]
     for k,x in enumerate(Fem.triangulation.points):
         if abs(Fem.solution[k] - sol(x)) == error[-1][-1]:
             pointlist.append([k,x])
     pointerror.append([error[-1][-1],pointlist]) 
 #for x in pointerror:
- #   print("point",x[1])
-error = np.array(error)
-
-#plt.triplot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy())
+    #print("point",x[1])
+#print(Fem.solution,[sol(x) for x in Fem.triangulation.points])
+plt.triplot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy())
 #plt.plot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],'o')
 #fig = plt.figure()
 #ax = Axes3D(fig)
@@ -62,8 +65,8 @@ error = np.array(error)
 #ax1 = Axes3D(fig1)
 #ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy(),[sol(x) for x in Fem.triangulation.points])
 
-#
-
-plt.loglog(error[:,0],error[:,1],'o')
+#error = np.array(error)
+#print(error)
+#plt.plot(error[:,0],error[:,1],'o')
 #plt.loglog([error[0,0],error[-1,0]],[error[0,1],error[0,1]*(error[-1,0]-error[0,0])**(5)])
 plt.show()

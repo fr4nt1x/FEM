@@ -12,28 +12,39 @@ class FiniteElement:
         #referenceElement holds the points of the reference element from which all other elements
         #are calculated
         self.functionRHS= functionRHS
-        self.referenceElement = np.array([[0,0],[1.,0],[0,1]])
+        self.referenceElement = np.array([[0,0],[1.,0],[0,1.]])
         self.triangulation = Delaunay(points)
         self.numberDOF = np.size(self.triangulation.points[:,0])
         self.maxDiam = 0
-        
-        #self.findIndicesForPrescribedValues(prescribedValues)
-        self.prescribedValues = prescribedValues
+        self.prescribedValues = [] 
+        if self.checkPrescribedValues(prescribedValues):
+            self.prescribedValues = prescribedValues
+        else:
+            print("Error: Prescribed Value index not an integer")
         self.linearBasis = []
         self.linearBasis.append(lambda x,y : 1-x-y)
         self.linearBasis.append(lambda x,y : x)
         self.linearBasis.append(lambda x,y : y)
 
         #Holds integral of two basisfunctons in one reference triangle
-        self.elementaryBasisMatrix = 1.0/12*np.array([[1,0.5,0.5],[0.5,1,0.5],[0.5,0.5,1]])
+        self.elementaryBasisMatrix = 1.0/12*np.array([[1.,0.5,0.5],[0.5,1.,0.5],[0.5,0.5,1.]])
         
         self.gradBasis = []
-        self.gradBasis.append(np.array([-1,-1])) 
-        self.gradBasis.append(np.array([1,0]))
-        self.gradBasis.append(np.array([0,1]))
+        self.gradBasis.append(np.array([-1.,-1])) 
+        self.gradBasis.append(np.array([1.,0]))
+        self.gradBasis.append(np.array([0,1.]))
         self.rightHandSide = np.zeros(self.numberDOF)
 
         self.PDEMatrix= PDEMatrix
+
+    def checkPrescribedValues(self,prescribedValues):
+        for value in prescribedValues:
+            if not float(int(value[0])) == value[0]:
+                print("false")
+                return False
+        else:
+            print("true")
+            return True 
 
     def calculateTransform(self,triangleIndex):
         """ Calculates the affine linear transform from the reference
@@ -59,7 +70,6 @@ class FiniteElement:
 
         #comes from the Integraltransform and is of the operator from reference to transformed
         determinant = np.linalg.det(transformMatrix)
-
         elementStiffnessMatrix = np.zeros((3,3))
         
         for row,column in product(range(3),range(3)):
@@ -74,7 +84,7 @@ class FiniteElement:
         globalColumnIndices=[]
         globalData = []
         for ele,triPoints in enumerate(self.triangulation.simplices):
-            print("element:"+str(ele)+"/"+ str(len(self.triangulation.simplices)))
+            #print("element:"+str(ele)+"/"+ str(len(self.triangulation.simplices)))
             eleStiffness = self.calculateElementStiffnessMatrix(ele)
             for row in range(3):
                 if self.prescribedValues != [] and triPoints[row] in self.prescribedValues[:,0]:
@@ -96,20 +106,24 @@ class FiniteElement:
         for ele,triPoints in enumerate(self.triangulation.simplices):
             elementRHS = self.calculateElementRightHandSide(ele)
             for index,entry in enumerate(elementRHS):
+                if triPoints[index] == 4:
+                    print(entry)
                 self.rightHandSide[triPoints[index]] += entry
         for indexValue in self.prescribedValues:
-            self.rightHandSide[indexValue[0]] = indexValue[1]
-        print("RHS",self.rightHandSide)
+            self.rightHandSide[int(indexValue[0])] = indexValue[1]
+        #print("RHS",self.rightHandSide)
     
     def calculateElementRightHandSide(self,triangleIndex):
         transformMatrix,translateVector = self.calculateTransform(triangleIndex)
         determinant = np.linalg.det(transformMatrix)
-        trianglePoints =self.triangulation.points[self.triangulation.simplices.copy()[triangleIndex]]
+        trianglePoints =self.triangulation.points[self.triangulation.simplices[triangleIndex]]
         elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.functionRHS(x) for x in trianglePoints] ))
+        print(trianglePoints, elementRHS)
         return elementRHS
 
     def solve(self):
         self.solution =sparse.linalg.spsolve(self.GlobalStiffness,self.rightHandSide)
+        
         
     def Global2Local(self,globalIndex):
         """returns for a given global index the pair of local ones"""

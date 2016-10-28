@@ -27,7 +27,7 @@ class FiniteElement:
         self.linearBasis.append(lambda x,y : y)
 
         #Holds integral of two basisfunctons in one reference triangle
-        self.elementaryBasisMatrix = 1.0/12*np.array([[1.,0.5,0.5],[0.5,1.,0.5],[0.5,0.5,1.]])
+        self.elementaryBasisMatrix = 1*1.0/12*np.array([[1.,0.5,0.5],[0.5,1.,0.5],[0.5,0.5,1.]])
         
         self.gradBasis = []
         self.gradBasis.append(np.array([-1.,-1])) 
@@ -69,10 +69,11 @@ class FiniteElement:
         transformMatrixInv = np.linalg.inv(transformMatrix)
 
         #comes from the Integraltransform and is of the operator from reference to transformed
-        determinant = np.linalg.det(transformMatrix)
+        determinant = abs(np.linalg.det(transformMatrix))
         elementStiffnessMatrix = np.zeros((3,3))
         
         for row,column in product(range(3),range(3)):
+            # 0.5 is the area of the reference triangle
             elementStiffnessMatrix[row,column] =0.5*determinant *np.dot(np.dot(np.dot(self.PDEMatrix,transformMatrixInv.T),self.gradBasis[row]),np.dot(transformMatrixInv.T,self.gradBasis[column]))
         return elementStiffnessMatrix
 
@@ -106,8 +107,6 @@ class FiniteElement:
         for ele,triPoints in enumerate(self.triangulation.simplices):
             elementRHS = self.calculateElementRightHandSide(ele)
             for index,entry in enumerate(elementRHS):
-                if triPoints[index] == 4:
-                    print(entry)
                 self.rightHandSide[triPoints[index]] += entry
         for indexValue in self.prescribedValues:
             self.rightHandSide[int(indexValue[0])] = indexValue[1]
@@ -115,10 +114,10 @@ class FiniteElement:
     
     def calculateElementRightHandSide(self,triangleIndex):
         transformMatrix,translateVector = self.calculateTransform(triangleIndex)
-        determinant = np.linalg.det(transformMatrix)
+        determinant = abs(np.linalg.det(transformMatrix))
         trianglePoints =self.triangulation.points[self.triangulation.simplices[triangleIndex]]
         elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.functionRHS(x) for x in trianglePoints] ))
-        print(trianglePoints, elementRHS)
+        #print(self.triangulation.simplices[triangleIndex], elementRHS)
         return elementRHS
 
     def solve(self):

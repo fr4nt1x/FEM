@@ -19,7 +19,7 @@ error= []
 pointerror= []
 boundary=[]
 
-for n in range(3,4,1):
+for n in range(38,39,1):
     points = []
     for x in np.linspace(0,1,n):
         for y in np.linspace(0,1,n):
@@ -42,11 +42,11 @@ for n in range(3,4,1):
     Fem.calculateGlobalStiffnessMatrix()
     Fem.calculateRightHandSide()
     Fem.solve()
-    error.append([Fem.maxDiam,np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.array(Fem.solution))])
-    print(Fem.triangulation.points)
+    error.append([Fem.maxDiam,np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.array(Fem.solution),np.infty)])
+    #print(Fem.triangulation.points)
     #print(Fem.solution)
-    print(Fem.rightHandSide)
-    print([f(x) for x in Fem.triangulation.points])
+    #print(Fem.rightHandSide)
+    #print([(k,f(x)) for k,x in enumerate(Fem.triangulation.points)])
     pointlist=[]
     for k,x in enumerate(Fem.triangulation.points):
         if abs(Fem.solution[k] - sol(x)) == error[-1][-1]:
@@ -55,18 +55,19 @@ for n in range(3,4,1):
 #for x in pointerror:
     #print("point",x[1])
 #print(Fem.solution,[sol(x) for x in Fem.triangulation.points])
-plt.triplot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy())
+#plt.triplot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy())
 #plt.plot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],'o')
-#fig = plt.figure()
-#ax = Axes3D(fig)
-#ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy(),Fem.solution)
 
-#fig1 = plt.figure()
-#ax1 = Axes3D(fig1)
-#ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy(),[sol(x) for x in Fem.triangulation.points])
+fig = plt.figure()
+ax = Axes3D(fig)
+ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.solution)
 
-#error = np.array(error)
-#print(error)
-#plt.plot(error[:,0],error[:,1],'o')
+fig1 = plt.figure()
+ax1 = Axes3D(fig1)
+ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],[sol(x) for x in Fem.triangulation.points])
+
+error = np.array(error)
+print(error)
+plt.plot(error[:,0],error[:,1],'o')
 #plt.loglog([error[0,0],error[-1,0]],[error[0,1],error[0,1]*(error[-1,0]-error[0,0])**(5)])
 plt.show()

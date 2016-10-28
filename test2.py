@@ -29,16 +29,29 @@ f= lambda x : 1 if np.linalg.norm(x)<=0.2 else 0
     #result = -1.04* np.exp(x[0]+0.2*x[1])
     return result
 """
-n= 80
+n= 40
 error= []
 pointerror= []
 
 #for n in range(3,100,10):
 points = []
-for x in np.linspace(-2,2,n):
-    for y in np.linspace(-2,2,n):
+for x in np.linspace(0,1,n):
+    for y in np.linspace(0,1,n):
         points.append([x,y])
 
+maximum0 = max(np.array(points)[:,0])
+maximum1 = max(np.array(points)[:,1])
+minimum0 = min(np.array(points)[:,0])
+minimum1 = min(np.array(points)[:,1])
+
+boundaryValuesx = [[k,1-x[1]**5] for k,x in enumerate(points) if x[0]==maximum0 ]
+boundaryValuesy = [[k,1-x[0]**2] for k,x in enumerate(points) if x[1]==maximum1 and not x[0]==maximum0 and not x[0]==minimum0 ]
+
+boundaryValuesx += [[k,x[1]] for k,x in enumerate(points) if x[0]==minimum0 ]
+boundaryValuesy += [[k,x[0]**9] for k,x in enumerate(points) if x[1]==minimum1 and not x[0]==maximum0 and not x[0]==minimum0]
+
+boundary = np.array(boundaryValuesx + boundaryValuesy)
+"""
 boundaryRadial = [[k,0] for k,x in enumerate(points) if linalg.norm(x) >1.2]
 boundaryRadial += [[k,1] for k,x in enumerate(points) if linalg.norm(x) <=0.7 and linalg.norm(x)>0.3]
 boundaryRadial += []#[[k,1.1] for k,x in enumerate(points) if linalg.norm(x) <=0.3]
@@ -46,7 +59,7 @@ boundaryValuesx = []#[[k,np.exp(0.5+0.2*x[1])] for k,x in enumerate(points) if x
 boundaryValuesy = []#[[k,np.exp(x[0])] for k,x in enumerate(points) if x[1]==minimum1 and not x[0]==maximum0 and not x[0]==minimum0]
 
 boundary = np.array(boundaryValuesx + boundaryValuesy+boundaryRadial)
-
+"""
 #boundary=[]
 
 Fem = FiniteElement(points,boundary,PDEMatrix= np.array([[1,0],[0,1]]))#,functionRHS = f)

@@ -35,8 +35,8 @@ pointerror= []
 
 #for n in range(3,100,10):
 points = []
-for x in np.linspace(0,1,n):
-    for y in np.linspace(0,1,n):
+for x in np.linspace(-1,1,n):
+    for y in np.linspace(-1,1,n):
         points.append([x,y])
 
 maximum0 = max(np.array(points)[:,0])
@@ -60,9 +60,9 @@ boundaryValuesy = []#[[k,np.exp(x[0])] for k,x in enumerate(points) if x[1]==min
 
 boundary = np.array(boundaryValuesx + boundaryValuesy+boundaryRadial)
 """
-#boundary=[]
+boundary=[]
 
-Fem = FiniteElement(points,boundary,PDEMatrix= np.array([[1,0],[0,1]]))#,functionRHS = f)
+Fem = FiniteElement(points,boundary,PDEMatrix= np.array([[1,0],[0,1]]),functionRHS = f)
 Fem.calculateGlobalStiffnessMatrix()
 Fem.calculateRightHandSide()
 Fem.solve()

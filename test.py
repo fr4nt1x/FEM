@@ -19,7 +19,7 @@ error= []
 pointerror= []
 boundary=[]
 
-for n in range(38,39,1):
+for n in range(3,9,1):
     points = []
     for x in np.linspace(0.5,1,n):
         for y in np.linspace(0,1,n):
@@ -30,11 +30,11 @@ for n in range(38,39,1):
     minimum0 = min(np.array(points)[:,0])
     minimum1 = min(np.array(points)[:,1])
 
-    boundaryValuesx = [[k,np.exp(1.0+0.2*x[1])] for k,x in enumerate(points) if x[0]==maximum0 ]
-    boundaryValuesy = [[k,np.exp(x[0]+0.2)] for k,x in enumerate(points) if x[1]==maximum1 and not x[0]==maximum0 and not x[0]==minimum0 ]
+    boundaryValuesx = [[k,sol(x)] for k,x in enumerate(points) if x[0]==maximum0 ]
+    boundaryValuesy = [[k,sol(x)] for k,x in enumerate(points) if x[1]==maximum1 and not x[0]==maximum0 and not x[0]==minimum0 ]
 
-    boundaryValuesx += [[k,np.exp(0.5+0.2*x[1])] for k,x in enumerate(points) if x[0]==minimum0 ]
-    boundaryValuesy += [[k,np.exp(x[0])] for k,x in enumerate(points) if x[1]==minimum1 and not x[0]==maximum0 and not x[0]==minimum0]
+    boundaryValuesx += [[k,sol(x)] for k,x in enumerate(points) if x[0]==minimum0 ]
+    boundaryValuesy += [[k,sol(x)] for k,x in enumerate(points) if x[1]==minimum1 and not x[0]==maximum0 and not x[0]==minimum0]
 
     boundary = np.array(boundaryValuesx + boundaryValuesy)
 
@@ -54,16 +54,17 @@ error = np.array(error)
 
 #plt.triplot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy())
 #plt.plot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],'o')
-fig = plt.figure()
-ax = Axes3D(fig)
-ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy(),Fem.solution)
+#fig = plt.figure()
+#ax = Axes3D(fig)
+#ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy(),Fem.solution)
 
-fig1 = plt.figure()
-ax1 = Axes3D(fig1)
-ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy(),[sol(x) for x in Fem.triangulation.points])
+#fig1 = plt.figure()
+#ax1 = Axes3D(fig1)
+#ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy(),[sol(x) for x in Fem.triangulation.points])
 
 #
 
-#plt.loglog(error[:,0],error[:,1],'o')
+plt.loglog(error[:,0],error[:,1],'o')
+print(error)
 #plt.loglog([error[0,0],error[-1,0]],[error[0,1],error[0,1]*(error[-1,0]-error[0,0])**(5)])
 plt.show()

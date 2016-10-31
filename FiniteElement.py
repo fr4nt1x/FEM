@@ -22,9 +22,9 @@ class FiniteElement:
         else:
             print("Error: Prescribed Value index not an integer")
         self.linearBasis = []
-        self.linearBasis.append(lambda x,y : 1-x-y)
-        self.linearBasis.append(lambda x,y : x)
-        self.linearBasis.append(lambda x,y : y)
+        self.linearBasis.append(lambda x : 1-x[0]-x[1])
+        self.linearBasis.append(lambda x : x[0])
+        self.linearBasis.append(lambda x : x[1])
 
         #Holds integral of two basisfunctons in one reference triangle
         self.elementaryBasisMatrix = 1*1.0/12*np.array([[1.,0.5,0.5],[0.5,1.,0.5],[0.5,0.5,1.]])
@@ -117,8 +117,15 @@ class FiniteElement:
         determinant = abs(np.linalg.det(transformMatrix))
         trianglePoints =self.triangulation.points[self.triangulation.simplices[triangleIndex]]
         elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.functionRHS(x) for x in trianglePoints] ))
+        midpoint = np.dot(transformMatrix,np.array([1/(math.sqrt(2)+2),1/(math.sqrt(2)+2)])) + translateVector
+        elementRHS2=[]
+        print(determinant)
+        for i in range(0,3):
+            #0.5 is because of the area of the reference triangle
+            elementRHS2.append(0.5*determinant*self.functionRHS(midpoint)*self.linearBasis[i](np.array([1/(math.sqrt(2)+2),1/(math.sqrt(2)+2)])))
         #print(self.triangulation.simplices[triangleIndex], elementRHS)
-        return elementRHS
+        #print(elementRHS2)
+        return elementRHS2
 
     def solve(self):
         self.solution =sparse.linalg.spsolve(self.GlobalStiffness,self.rightHandSide)

@@ -19,7 +19,7 @@ error= []
 pointerror= []
 boundary=[]
 
-for n in range(38,39,1):
+for n in range(3,9,1):
     points = []
     for x in np.linspace(0,1,n):
         for y in np.linspace(0,1,n):
@@ -58,16 +58,16 @@ for n in range(38,39,1):
 #plt.triplot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy())
 #plt.plot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],'o')
 
-fig = plt.figure()
-ax = Axes3D(fig)
-ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.solution)
+#fig = plt.figure()
+#ax = Axes3D(fig)
+#ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.solution)
 
-fig1 = plt.figure()
-ax1 = Axes3D(fig1)
-ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],[sol(x) for x in Fem.triangulation.points])
+#fig1 = plt.figure()
+#ax1 = Axes3D(fig1)
+#ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],[sol(x) for x in Fem.triangulation.points])
 
 error = np.array(error)
 print(error)
-plt.plot(error[:,0],error[:,1],'o')
+plt.loglog(error[:,0],error[:,1],'o')
 #plt.loglog([error[0,0],error[-1,0]],[error[0,1],error[0,1]*(error[-1,0]-error[0,0])**(5)])
 plt.show()

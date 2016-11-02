@@ -11,12 +11,12 @@ nx =50
 ny =50
 
 
-f= lambda x : 1 if np.linalg.norm(x)<=0.2 else 0
-"""def f(x):
+#f= lambda x : 1 if np.linalg.norm(x)<=0.2 else 0
+def f(x):
     result = 0
     
     if np.linalg.norm(x) <= 0.1:
-        result = 10
+        result = 1
     #elif np.linalg.norm(x-np.array([0.5,0]))<= 0.1:
      #   result= 2
     #elif np.linalg.norm(x - np.array([0,0.5])) <= 0.1:
@@ -28,7 +28,7 @@ f= lambda x : 1 if np.linalg.norm(x)<=0.2 else 0
         result=0
     #result = -1.04* np.exp(x[0]+0.2*x[1])
     return result
-"""
+
 n= 40
 error= []
 pointerror= []

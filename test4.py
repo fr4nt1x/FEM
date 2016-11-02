@@ -6,20 +6,20 @@ import math
 from numpy import linalg
 from FiniteElement import FiniteElement
 
-sol = lambda x : np.exp(x[0]+x[1])
+sol = lambda x : 1+x[0]**2+2*x[1]**2
 nx =50
 ny =50
 
 
 def f(x):
-    result = -2.*np.exp(x[0]+x[1])
+    result = -6.
     return result
 
 error= []
 pointerror= []
 boundary=[]
 
-for n in range(3,50,5):
+for n in range(5,19,1):
     points = []
     for x in np.linspace(0,1,n):
         for y in np.linspace(0,1,n):
@@ -42,16 +42,18 @@ for n in range(3,50,5):
     Fem.calculateGlobalStiffnessMatrix()
     Fem.calculateRightHandSide()
     Fem.solve()
-    error.append([Fem.maxDiam,np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.array(Fem.solution))])
+    Fem.getL2Error(sol)
+    #error.append([Fem.maxDiam,np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.array(Fem.solution),np.infty)])
+    error.append([Fem.maxDiam,Fem.getL2Error(sol)])
     #print(Fem.triangulation.points)
     #print(Fem.solution)
     #print(Fem.rightHandSide)
     #print([(k,f(x)) for k,x in enumerate(Fem.triangulation.points)])
-    pointlist=[]
-    for k,x in enumerate(Fem.triangulation.points):
-        if abs(Fem.solution[k] - sol(x)) == error[-1][-1]:
-            pointlist.append([k,x])
-    pointerror.append([error[-1][-1],pointlist]) 
+    #pointlist=[]
+    #for k,x in enumerate(Fem.triangulation.points):
+    #    if abs(Fem.solution[k] - sol(x)) == error[-1][-1]:
+     #       pointlist.append([k,x])
+    #pointerror.append([error[-1][-1],pointlist]) 
 #for x in pointerror:
     #print("point",x[1])
 #print(Fem.solution,[sol(x) for x in Fem.triangulation.points])
@@ -68,6 +70,6 @@ for n in range(3,50,5):
 
 error = np.array(error)
 print(error)
-plt.plot(error[:,0],error[:,1],'o')
+plt.loglog(error[:,0],error[:,1],'o')
 #plt.loglog([error[0,0],error[-1,0]],[error[0,1],error[0,1]*(error[-1,0]-error[0,0])**(5)])
 plt.show()

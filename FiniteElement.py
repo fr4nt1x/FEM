@@ -101,7 +101,8 @@ class FiniteElement:
             globalData.append(1)
         self.GlobalStiffness = sparse.coo_matrix((globalData,(globalRowIndices,globalColumnIndices))).tocsc() 
 
-       # print(self.GlobalStiffness.toarray())
+        #for k,v in enumerate(self.GlobalStiffness.toarray()):
+          #  print(k,v)
 
     def calculateRightHandSide(self):
         for ele,triPoints in enumerate(self.triangulation.simplices):
@@ -110,27 +111,37 @@ class FiniteElement:
                 self.rightHandSide[triPoints[index]] += entry
         for indexValue in self.prescribedValues:
             self.rightHandSide[int(indexValue[0])] = indexValue[1]
-        #print("RHS",self.rightHandSide)
+        #for k,v in enumerate(self.rightHandSide):
+         #   print(k,v)
     
     def calculateElementRightHandSide(self,triangleIndex):
         transformMatrix,translateVector = self.calculateTransform(triangleIndex)
         determinant = abs(np.linalg.det(transformMatrix))
         trianglePoints =self.triangulation.points[self.triangulation.simplices[triangleIndex]]
         elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.functionRHS(x) for x in trianglePoints] ))
-        midpoint = np.dot(transformMatrix,np.array([1/(math.sqrt(2)+2),1/(math.sqrt(2)+2)])) + translateVector
+        midpoint = np.dot(transformMatrix,np.array([0.25,0.5])) + translateVector
         elementRHS2=[]
-        print(determinant)
         for i in range(0,3):
             #0.5 is because of the area of the reference triangle
-            elementRHS2.append(0.5*determinant*self.functionRHS(midpoint)*self.linearBasis[i](np.array([1/(math.sqrt(2)+2),1/(math.sqrt(2)+2)])))
+            elementRHS2.append(determinant*0.5*self.functionRHS(midpoint)*self.linearBasis[i](np.array([0.25,0.5])))
         #print(self.triangulation.simplices[triangleIndex], elementRHS)
         #print(elementRHS2)
-        return elementRHS2
+        return elementRHS
 
     def solve(self):
         self.solution =sparse.linalg.spsolve(self.GlobalStiffness,self.rightHandSide)
         
         
+
+    def getL2Error(self,exactSolution):
+        #
+        value = 0
+        error = np.array(self.solution)-np.array([exactSolution(x) for x in self.triangulation.points])
+        for ele,triPoints in enumerate(self.triangulation.simplices):
+            transformMatrix,translateVector = self.calculateTransform(ele)
+            determinant = abs(np.linalg.det(transformMatrix))
+            value+=determinant*np.dot(error[triPoints]**2,np.array([1/6.,1/3.,1/3.]))
+        return(math.sqrt(value))
     def Global2Local(self,globalIndex):
         """returns for a given global index the pair of local ones"""
         ele = int(math.floor(globalIndex / 3))

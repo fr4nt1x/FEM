@@ -2,17 +2,48 @@ from scipy.spatial import Delaunay
 from scipy import sparse
 from scipy.sparse import linalg
 from itertools import product
+from numpy.polynomial.legendre import leggauss
 import math
 
 import numpy as np
 
 class FiniteElement:
-    """Initiates the triangulation and calculates the stiffness matrix and righthand side"""
+    """
+    Class for solving an Elliptic equation of the form div(A dot grad u) = f for given Matrix A(PDEMatrix).
+    
+    It's using the weak form of the equation and solves this with a Finite Element approach.
+    
+    Uses scipy Delaunay to get a triangulation of the Space. The Ansatzfunctions are linear Lagrangefunctions 
+    on these Triangles.
+
+    All the integrals that are needed for Stiffnessmatrix and Righthandside get calculated via a reference triangle.
+    """
+
     def __init__(self,points,prescribedValues,PDEMatrix=np.eye(2),functionRHS=lambda x: 0):
+        """
+        Initiates the triangulation and calculates the stiffness matrix and righthand side
+
+        INPUT: 
+                
+                points             points from which the triangulation of the domain will be calculated
+
+                prescribedValues   boundary values as a list of pairs with format [index,value], where index 
+                                   specifies the  point the given value is prescribed, such that
+                                   u(points[index]) = value for u the solution of the problem
+                
+                PDEMatrix          The Matrix which specifies the PDE, should be positive definite to guarante the PDE
+                                   is elliptic
+                
+                functionRHS        a function handle which specifies the Righthandside of the PDE, Should be an L2 
+                                   function
+
+        """
+   
         #referenceElement holds the points of the reference element from which all other elements
         #are calculated
         self.functionRHS= functionRHS
         self.referenceElement = np.array([[0,0],[1.,0],[0,1.]])
+
         self.triangulation = Delaunay(points)
         self.numberDOF = np.size(self.triangulation.points[:,0])
         self.maxDiam = 0
@@ -27,17 +58,22 @@ class FiniteElement:
         self.linearBasis.append(lambda x : x[1])
 
         #Holds integral of two basisfunctons in one reference triangle
-        self.elementaryBasisMatrix = 1*1.0/12*np.array([[1.,0.5,0.5],[0.5,1.,0.5],[0.5,0.5,1.]])
+        self.elementaryBasisMatrix = 1.0/12*np.array([[1.,0.5,0.5],[0.5,1.,0.5],[0.5,0.5,1.]])
         
         self.gradBasis = []
         self.gradBasis.append(np.array([-1.,-1])) 
         self.gradBasis.append(np.array([1.,0]))
         self.gradBasis.append(np.array([0,1.]))
+
         self.rightHandSide = np.zeros(self.numberDOF)
 
         self.PDEMatrix= PDEMatrix
 
     def checkPrescribedValues(self,prescribedValues):
+        """
+        Simple check if for the given index,value pairs, the index is an integer
+        """
+
         for value in prescribedValues:
             if not float(int(value[0])) == value[0]:
                 print("false")
@@ -63,8 +99,11 @@ class FiniteElement:
 
     
     def calculateElementStiffnessMatrix(self,triangleIndex):
-        """Returns the Elemnt Stiffness Matrix for the given Triangle, calcluated
-            from the reference Element via the Transform and the reference Gradients"""
+        """
+        Returns the Elemnt Stiffness Matrix for the given Triangle, calcluated
+        from the reference Element via the Transform and the reference Gradients
+        """
+
         transformMatrix,translateVector = self.calculateTransform(triangleIndex)
         transformMatrixInv = np.linalg.inv(transformMatrix)
 
@@ -78,14 +117,16 @@ class FiniteElement:
         return elementStiffnessMatrix
 
     def calculateGlobalStiffnessMatrix(self):
-        """Loops over all elements, calculates the element Stiffness and assembles 
-            it in CSC to a global Matrix"""
+        """
+        Loops over all elements, calculates the element Stiffness and assemble them into a global 
+        Matrix in csc format
+        """
         
         globalRowIndices = []
         globalColumnIndices=[]
         globalData = []
+
         for ele,triPoints in enumerate(self.triangulation.simplices):
-            #print("element:"+str(ele)+"/"+ str(len(self.triangulation.simplices)))
             eleStiffness = self.calculateElementStiffnessMatrix(ele)
             for row in range(3):
                 if self.prescribedValues != [] and triPoints[row] in self.prescribedValues[:,0]:
@@ -95,35 +136,50 @@ class FiniteElement:
                         globalRowIndices.append(triPoints[row])
                         globalColumnIndices.append(triPoints[column])
                         globalData.append(eleStiffness[row,column])
+        
         for v in self.prescribedValues:
             globalRowIndices.append(v[0])
             globalColumnIndices.append(v[0])
             globalData.append(1)
         self.GlobalStiffness = sparse.coo_matrix((globalData,(globalRowIndices,globalColumnIndices))).tocsc() 
 
-        #for k,v in enumerate(self.GlobalStiffness.toarray()):
-          #  print(k,v)
-
     def calculateRightHandSide(self):
+        """
+        Calculates the Righthandside, by calling the entries for each element and assembling the result
+        into an global vector
+        """
+
+        #each element triangulation.simplices is a list with the point indices of the triangle
         for ele,triPoints in enumerate(self.triangulation.simplices):
             elementRHS = self.calculateElementRightHandSide(ele)
             for index,entry in enumerate(elementRHS):
                 self.rightHandSide[triPoints[index]] += entry
         for indexValue in self.prescribedValues:
             self.rightHandSide[int(indexValue[0])] = indexValue[1]
-        #for k,v in enumerate(self.rightHandSide):
-         #   print(k,v)
     
     def calculateElementRightHandSide(self,triangleIndex):
+        """
+        Calculates for the specified element the Righthandside via transformation to the reference triangle.
+        Expands the given function in the same linear basis f(x) = Sum(f_i phi_i) and uses the precalculated
+        integrals of two basisfunctions multiplied with each other. 
+        """
         transformMatrix,translateVector = self.calculateTransform(triangleIndex)
         determinant = abs(np.linalg.det(transformMatrix))
         trianglePoints =self.triangulation.points[self.triangulation.simplices[triangleIndex]]
         elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.functionRHS(x) for x in trianglePoints] ))
+        return elementRHS
+
+    def calculateElementRightHandSideGaussLeg(self,triangleIndex):
+        transformMatrix,translateVector = self.calculateTransform(triangleIndex)
+        determinant = abs(np.linalg.det(transformMatrix))
+        trianglePoints =self.triangulation.points[self.triangulation.simplices[triangleIndex]]
+        elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.functionRHS(x) for x in trianglePoints] ))
+
         midpoint = np.dot(transformMatrix,np.array([0.25,0.5])) + translateVector
-        elementRHS2=[]
+        elementRHS=[]
         for i in range(0,3):
             #0.5 is because of the area of the reference triangle
-            elementRHS2.append(determinant*0.5*self.functionRHS(midpoint)*self.linearBasis[i](np.array([0.25,0.5])))
+            elementRHS.append(determinant*0.5*self.functionRHS(midpoint)*self.linearBasis[i](np.array([0.25,0.5])))
         #print(self.triangulation.simplices[triangleIndex], elementRHS)
         #print(elementRHS2)
         return elementRHS

@@ -19,7 +19,7 @@ error= []
 pointerror= []
 boundary=[]
 
-for n in range(3,50,5):
+for n in range(3,40,5):
     points = []
     for x in np.linspace(0,1,n):
         for y in np.linspace(0,1,n):
@@ -42,7 +42,7 @@ for n in range(3,50,5):
     Fem.calculateGlobalStiffnessMatrix()
     Fem.calculateRightHandSide()
     Fem.solve()
-    error.append([Fem.maxDiam,np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.array(Fem.solution))])
+    error.append([Fem.maxDiam,np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.array(Fem.solution),np.infty)])
     #print(Fem.triangulation.points)
     #print(Fem.solution)
     #print(Fem.rightHandSide)

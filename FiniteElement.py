@@ -92,7 +92,6 @@ class FiniteElement:
                 print("false")
                 return False
         else:
-            print("true")
             return True 
 
     def calculateTransform(self,triangleIndex):
@@ -180,7 +179,7 @@ class FiniteElement:
 
         #each element triangulation.simplices is a list with the point indices of the triangle
         for ele,triPoints in enumerate(self.triangulation.simplices):
-            elementRHS = self.calculateElementRightHandSideGaussLeg(ele)
+            elementRHS = self.calculateElementRightHandSide(ele)
 
             for index,entry in enumerate(elementRHS):
                 self.rightHandSide[triPoints[index]] += entry
@@ -202,9 +201,11 @@ class FiniteElement:
         elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.functionRHS(x) for x in trianglePoints] ))
         return elementRHS
 
-    def calculateElementRightHandSideGaussLeg(self,triangleIndex):
+    def calculateElementRightHandSideGaussLeg(self,triangleIndex,degree):
         """
         Calculates the Integral int{f phi_j} with transformation formula, and Gauss Legendre quadrature
+        integral over a transformed element --> reference element --> standard square element
+        Not used for linear elements, but can be used for higher order elements
         """
 
         transformMatrix,translateVector = self.calculateTransform(triangleIndex)
@@ -212,13 +213,18 @@ class FiniteElement:
 
         
         trianglePoints =self.triangulation.points[self.triangulation.simplices[triangleIndex]]
-        gPoints,gWeights = leggauss(1)
-        print(gPoints,gWeights)
-        midpoint = np.dot(transformMatrix,np.array([0.25,0.5])) + translateVector
-        elementRHS=[]
+        gPoints,gWeigths = leggauss(degree)
+        elementRHS = []
+        #calculate each entry per Gaussintegration
         for i in range(0,3):
-            #0.5 comes from transformation of reference triangle to standard square [-1,1] x [-1,1]
-            elementRHS.append(determinant*0.5*self.functionRHS(midpoint)*self.linearBasis[i](np.array([0.25,0.5])))
+            entry = 0.0
+            #sum over weights evaluated at Gauss points,
+            for indexX,pointX in enumerate(gPoints):
+                for indexY,pointY in enumerate(gPoints):
+                    transformedPoint = np.dot(transformMatrix,np.array([(1+pointX)*0.5,(1-pointX)*(1+pointY)*0.25])) +translateVector
+                    entry+= determinant*0.5*(1-pointX)*0.125*self.functionRHS(transformedPoint)*gWeigths[indexX]*gWeigths[indexY]*self.linearBasis[i](np.array([(1+pointX)*0.5,(1-pointX)*(1+pointY)*0.25]))
+                    #0.5 comes from transformation of reference triangle to standard square [-1,1] x [-1,1]
+            elementRHS.append(entry)
         return elementRHS
 
     def solve(self):
@@ -236,5 +242,6 @@ class FiniteElement:
         for ele,triPoints in enumerate(self.triangulation.simplices):
             transformMatrix,translateVector = self.calculateTransform(ele)
             determinant = abs(np.linalg.det(transformMatrix))
+            #Last vector is the precalculated integral of the basisfunctions over a reference element
             value+=determinant*np.dot(error[triPoints]**2,np.array([1/6.,1/3.,1/3.]))
         return(math.sqrt(value))

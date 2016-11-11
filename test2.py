@@ -15,21 +15,21 @@ ny =50
 def f(x):
     result = 0
     
-    #if np.linalg.norm(x) <= 0.2:
-     #   result = 1
-    if np.linalg.norm(x-np.array([0.5,0]))<= 0.1:
-        result= -2
+    if np.linalg.norm(x) <= 0.5:
+        result = 1
+    elif np.linalg.norm(x-np.array([0.5,0]))<= 0.1:
+        result= -0
     elif np.linalg.norm(x - np.array([0,0.5])) <= 0.1:
-        result = -2
+        result = -0
     elif np.linalg.norm(x-np.array([0,-0.5]))<= 0.1:
-        result= 5
+        result= 0
     
     else:
         result=0
     #result = -1.04* np.exp(x[0]+0.2*x[1])
     return result
 
-n= 110
+n= 10
 error= []
 pointerror= []
 

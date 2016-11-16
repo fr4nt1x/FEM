@@ -51,6 +51,7 @@ boundaryValuesx += [[k,0] for k,x in enumerate(points) if x[0]==minimum0 ]
 boundaryValuesy += [[k,0] for k,x in enumerate(points) if x[1]==minimum1 and not x[0]==maximum0 and not x[0]==minimum0]
 
 boundary = np.array(boundaryValuesx + boundaryValuesy)
+
 """
 boundaryRadial = [[k,0] for k,x in enumerate(points) if linalg.norm(x) >1.2]
 boundaryRadial += [[k,1] for k,x in enumerate(points) if linalg.norm(x) <=0.7 and linalg.norm(x)>0.3]
@@ -60,6 +61,7 @@ boundaryValuesy = []#[[k,np.exp(x[0])] for k,x in enumerate(points) if x[1]==min
 
 boundary = np.array(boundaryValuesx + boundaryValuesy+boundaryRadial)
 """
+
 #boundary=np.array([])
 
 Fem = FiniteElement(points,boundary,PDEMatrix= np.array([[1,0],[0,1]]),functionRHS = f)

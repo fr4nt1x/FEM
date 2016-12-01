@@ -19,9 +19,9 @@ error= []
 pointerror= []
 boundary=[]
 
-for n in range(3,9,1):
+for n in range(20,21,1):
     points = []
-    for x in np.linspace(0.5,1,n):
+    for x in np.linspace(0,1,n):
         for y in np.linspace(0,1,n):
             points.append([x,y])
 
@@ -42,6 +42,8 @@ for n in range(3,9,1):
     Fem.calculateGlobalStiffnessMatrix()
     Fem.calculateRightHandSide()
     Fem.solve()
+    #print(Fem.solution)
+
     error.append([Fem.maxDiam,np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.array(Fem.solution),np.infty)])
     pointlist=[]
     for k,x in enumerate(Fem.triangulation.points):
@@ -50,10 +52,13 @@ for n in range(3,9,1):
     pointerror.append([error[-1][-1],pointlist]) 
 #for x in pointerror:
  #   print("point",x[1])
-error = np.array(error)
+
+error = error
+print(error[0][1])
 
 #plt.triplot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy())
 #plt.plot(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],'o')
+
 #fig = plt.figure()
 #ax = Axes3D(fig)
 #ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy(),Fem.solution)
@@ -64,7 +69,7 @@ error = np.array(error)
 
 #
 
-plt.loglog(error[:,0],error[:,1],'o')
-print(error)
+#plt.loglog(error[:,0],error[:,1],'o')
+#print(error)
 #plt.loglog([error[0,0],error[-1,0]],[error[0,1],error[0,1]*(error[-1,0]-error[0,0])**(5)])
-plt.show()
+#plt.show()

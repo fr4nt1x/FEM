@@ -11,21 +11,21 @@ This runscript test the FiniteElement module via an manufactured solution.
 to change the number of Points on the domain n can be changed.
 """
 #number of points to use in x and y direction
-n = 30
+n = 10
 
 #exact solution
-sol = lambda x : np.exp(x[0]+0.2*x[1])
+sol = lambda x : 1+x[0]*x[0]+2*x[1]*x[1]
 
 #right handside calculated to match exact solution
 def f(x):
-    result = -1.04* np.exp(x[0]+0.2*x[1])
+    result = -6
     return result
 
 #boundary values  have the format list with elements [pointindex, value_at_this_point] 
 boundary=[]
 
 #specifies the bounding area of the domain
-minimumX = 0.5
+minimumX = 0
 maximumX = 1
 minimumY = 0
 maximumY = 1
@@ -52,7 +52,7 @@ Fem.calculateRightHandSide()
 Fem.solve()
 
 #Calculates the error in the infty norm 
-error = np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.array(Fem.solution),np.infty)
+error = np.linalg.norm(np.array([sol(x) for x in points])-np.array(Fem.solution),np.infty)
 
 
 #Plots the Fem solution

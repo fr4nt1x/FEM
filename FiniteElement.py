@@ -109,7 +109,6 @@ class FiniteElement:
         #hold the coordinates both elements with ones appended as last row
         referenceCoord = np.array([self.referenceElement[:,0],self.referenceElement[:,1],np.array([1,1,1])])       
         transformedCoord = np.array([trianglePoints[:,0],trianglePoints[:,1],np.array([1,1,1])])
-        
         C = np.dot( transformedCoord,np.linalg.inv(referenceCoord)) 
         
         #L is in the first n x n submatrix of (n+1) x (n+1) Matrix C, b the last column without the last entry 
@@ -134,7 +133,7 @@ class FiniteElement:
         for row,column in product(range(3),range(3)):
             # 0.5 is the area of the reference triangle, since all functions are constant for
             #linear elements this yields the integral
-            elementStiffnessMatrix[row,column] =0.5*determinant *np.dot(np.dot(np.dot(self.PDEMatrix,transformMatrixInv.T),self.gradBasis[row]),np.dot(transformMatrixInv.T,self.gradBasis[column]))
+            elementStiffnessMatrix[row,column] = 0.5*determinant *np.dot(np.dot(np.dot(self.PDEMatrix,transformMatrixInv.T),self.gradBasis[row]),np.dot(transformMatrixInv.T,self.gradBasis[column]))
         return elementStiffnessMatrix
 
     def calculateGlobalStiffnessMatrix(self):
@@ -164,12 +163,14 @@ class FiniteElement:
         #Dirichlet boundaries at position j are enforced, by adding a row (0,0,..,1,...,0) (j-th entry),
         #and the value in the right hand side at the position j   
         for v in self.prescribedValues:
+
             globalRowIndices.append(v[0])
             globalColumnIndices.append(v[0])
             globalData.append(1)
 
         #create global matrix in coordinate format and convert it to csc for faster solving
         self.GlobalStiffness = sparse.coo_matrix((globalData,(globalRowIndices,globalColumnIndices))).tocsc() 
+        # print(self.GlobalStiffness.toarray())
 
     def calculateRightHandSide(self):
         """
@@ -187,6 +188,7 @@ class FiniteElement:
         #overwrite the values at the prescribed boundaries condition
         for indexValue in self.prescribedValues:
             self.rightHandSide[int(indexValue[0])] = indexValue[1]
+        #print(self.rightHandSide)
     
     def calculateElementRightHandSide(self,triangleIndex):
         """
@@ -199,6 +201,8 @@ class FiniteElement:
 
         trianglePoints =self.triangulation.points[self.triangulation.simplices[triangleIndex]]
         elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.functionRHS(x) for x in trianglePoints] ))
+        #print("fun",np.array([[x,self.functionRHS(x)] for x in trianglePoints] ))
+        #print(self.triangulation.simplices[triangleIndex])
         return elementRHS
 
     def calculateElementRightHandSideGaussLeg(self,triangleIndex,degree):

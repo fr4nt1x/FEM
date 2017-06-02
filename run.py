@@ -59,13 +59,13 @@ error = np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.a
 fig = plt.figure()
 ax = Axes3D(fig)
 ax.text(0.5,0.5,1,"exact solution",color="red")
-ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy(),Fem.solution)
+ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.triangles.copy(),Fem.solution)
 
 #Plots the exact solution
 fig1 = plt.figure()
 ax1 = Axes3D(fig1)
 ax1.text(0.5,0.5,1,"FEM - solution",color="red")
-ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.simplices.copy(),[sol(x) for x in Fem.triangulation.points])
+ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.triangles.copy(),[sol(x) for x in Fem.triangulation.points])
 
 print(error)
 plt.show()

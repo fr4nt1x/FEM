@@ -1,4 +1,5 @@
 from scipy.spatial import Delaunay
+from Mesh import Mesh
 from scipy import sparse
 from scipy.sparse import linalg
 from itertools import product
@@ -46,7 +47,8 @@ class FiniteElement:
         self.referenceElement = np.array([[0,0],[1.,0],[0,1.]])
 
         #Calculate a delaunay triangulation of the input points
-        self.triangulation = Delaunay(points)
+
+        self.triangulation = Mesh( np.array([[0,0],[1,0],[1,1],[0,1]]),[[0,1,2],[2,3,0]])
 
         #Uses to initiate the stiffness matrix and the Rhs with the correct size
         self.numberDOF = np.size(self.triangulation.points[:,0])
@@ -101,7 +103,7 @@ class FiniteElement:
         """
         
         #get the pointcoordinates via the point indices of the specified element
-        trianglePoints = self.triangulation.points[self.triangulation.simplices.copy()[triangleIndex]]
+        trianglePoints = self.triangulation.points[self.triangulation.triangles.copy()[triangleIndex]]
 
         #calculate the Diameter and save it if a new maximum arises
         self.maxDiam = max(np.linalg.norm(trianglePoints[0]-trianglePoints[1]),np.linalg.norm(trianglePoints[0]-trianglePoints[2]),np.linalg.norm(trianglePoints[2]-trianglePoints[1]),self.maxDiam)
@@ -147,7 +149,7 @@ class FiniteElement:
         globalData = []
         
 
-        for ele,triPoints in enumerate(self.triangulation.simplices):
+        for ele,triPoints in enumerate(self.triangulation.triangles):
             eleStiffness = self.calculateElementStiffnessMatrix(ele)
 
             #append the entries at the correct position in the global matrix, only if no Boundary
@@ -179,7 +181,7 @@ class FiniteElement:
         """
 
         #each element triangulation.simplices is a list with the point indices of the triangle
-        for ele,triPoints in enumerate(self.triangulation.simplices):
+        for ele,triPoints in enumerate(self.triangulation.triangles):
             elementRHS = self.calculateElementRightHandSide(ele)
 
             for index,entry in enumerate(elementRHS):
@@ -199,7 +201,7 @@ class FiniteElement:
         transformMatrix,translateVector = self.calculateTransform(triangleIndex)
         determinant = abs(np.linalg.det(transformMatrix))
 
-        trianglePoints =self.triangulation.points[self.triangulation.simplices[triangleIndex]]
+        trianglePoints =self.triangulation.points[self.triangulation.triangles[triangleIndex]]
         elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.functionRHS(x) for x in trianglePoints] ))
         #print("fun",np.array([[x,self.functionRHS(x)] for x in trianglePoints] ))
         #print(self.triangulation.simplices[triangleIndex])
@@ -216,7 +218,7 @@ class FiniteElement:
         determinant = abs(np.linalg.det(transformMatrix))
 
         
-        trianglePoints =self.triangulation.points[self.triangulation.simplices[triangleIndex]]
+        trianglePoints =self.triangulation.points[self.triangulation.triangles[triangleIndex]]
         gPoints,gWeigths = leggauss(degree)
         elementRHS = []
         #calculate each entry per Gaussintegration
@@ -243,7 +245,7 @@ class FiniteElement:
         """
         value = 0
         error = np.array(self.solution)-np.array([exactSolution(x) for x in self.triangulation.points])
-        for ele,triPoints in enumerate(self.triangulation.simplices):
+        for ele,triPoints in enumerate(self.triangulation.triangles):
             transformMatrix,translateVector = self.calculateTransform(ele)
             determinant = abs(np.linalg.det(transformMatrix))
             #Last vector is the precalculated integral of the basisfunctions over a reference element

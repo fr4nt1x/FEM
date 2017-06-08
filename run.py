@@ -32,6 +32,7 @@ maximumY = 1
 
 points = []
 i=0
+
 for x in np.linspace(minimumX,maximumX,n):
     for y in np.linspace(minimumY,maximumY,n):
         

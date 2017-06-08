@@ -20,7 +20,7 @@ class FiniteElement:
     All the integrals that are needed for Stiffnessmatrix and Righthandside get calculated via a reference triangle.
     """
 
-    def __init__(self,points,prescribedValues,PDEMatrix=np.eye(2),functionRHS=lambda x: 0):
+    def __init__(self,mesh,PDEMatrix=np.eye(2),functionRHS=lambda x: 0):
         """
         Initiates the triangulation and calculates the stiffness matrix and righthand side
 
@@ -47,8 +47,8 @@ class FiniteElement:
         self.referenceElement = np.array([[0,0],[1.,0],[0,1.]])
 
         #Calculate a delaunay triangulation of the input points
-
-        self.triangulation = Mesh( np.array([[0,0],[1,0],[1,1],[0,1]]),[[0,1,2],[2,3,0]])
+        self.mesh = mesh
+        self.triangulation = self.mesh
 
         #Uses to initiate the stiffness matrix and the Rhs with the correct size
         self.numberDOF = np.size(self.triangulation.points[:,0])
@@ -56,11 +56,7 @@ class FiniteElement:
         #is the biggest side of the triangulation
         self.maxDiam = 0
 
-        self.prescribedValues = [] 
-        if self.checkPrescribedValues(prescribedValues):
-            self.prescribedValues = prescribedValues
-        else:
-            print("Error: Prescribed Value index not an integer")
+        self.prescribedValues = np.array(mesh.boundaryValues)
         #the 3 linear Basis funtctions on the reference triangle
         #each has the value 1 at one points and 0 at the other points
         #Numbering of the vertices according to self.referenceElement

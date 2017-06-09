@@ -15,7 +15,17 @@ class Mesh:
         self.edges = boundaryEdges
         self.boundaryValues = self.generateBoundaryValues()
         self.trianglesWithEdges = self.initiateTrianglesWithEdges() 
-    
+        self.diam = self.getDiameter() 
+
+    def getDiameter(self):
+        diam = 0
+        for triangle in self.trianglesWithEdges:
+            for edge in triangle:
+                firstPoint = self.edges[edge[0]][0][0]
+                secondPoint = self.edges[edge[0]][0][1]
+                diam = max(diam,np.linalg.norm(self.points[firstPoint]-self.points[secondPoint]))
+        return diam
+
     def initiateTrianglesWithEdges(self):
         trianglesWithEdges = []
         edges = [e[0] for e in self.edges]
@@ -164,5 +174,6 @@ class Mesh:
             self.edges = newEdges
             self.generateNewTriangles(listOfEdges,indexOfNewPoints)
             self.boundaryValues = self.generateBoundaryValues()
+            self.diam = self.diam*0.5
 
                 

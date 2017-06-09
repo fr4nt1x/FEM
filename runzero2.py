@@ -24,7 +24,7 @@ triangles = [[0,1,2],[2,3,0]]
 boundaryEdges = [[[0,1],sol],[[1,2],sol],[[2,0],None],[[2,3],sol],[[3,0],sol]]
 m = Mesh(points, triangles, boundaryEdges)
 error = []
-for i in range(0,7):
+for i in range(0,6):
     m.refineMesh(1)
     # m.plotTriangles()
     #Initiate Finite element class, with the PDE
@@ -38,12 +38,13 @@ for i in range(0,7):
     #Calculates the error in the infty norm 
     # error = np.linalg.norm(np.array([sol(x) for x in Fem.triangulation.points])-np.array(Fem.solution),np.infty)
     error.append([Fem.getL2Error(sol),Fem.mesh.diam])
+print(error)
 
 #Plots the Fem solution
-#fig = plt.figure()
-#ax = Axes3D(fig)
-#ax.text(0.5,0.5,1,"FEM - solution",color="red")
-#ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.triangles.copy(),Fem.solution)
+fig = plt.figure()
+ax = Axes3D(fig)
+ax.text(0.5,0.5,1,"FEM - solution",color="red")
+ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.triangles.copy(),Fem.solution)
 
 #Plots the exact solution
 # fig1 = plt.figure()
@@ -51,8 +52,5 @@ for i in range(0,7):
 # ax1.text(0.5,0.5,1,"exact - solution",color="red")
 # ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.triangles.copy(),[sol(x) for x in Fem.triangulation.points])
 
-#plt.loglog([e[0] for e in error], [e[1] for e in error],'o')
-for index, e in enumerate(error):
-    if index < len(error)-1:
-        print(np.log(error[index+1][0]/e[0])/np.log(error[index+1][1]/e[1]))
+plt.loglog([e[0] for e in error], [e[1] for e in error],'o')
 plt.show()

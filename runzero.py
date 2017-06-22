@@ -24,7 +24,7 @@ triangles = [[0,1,2],[2,3,0]]
 boundaryEdges = [[[0,1],sol],[[1,2],sol],[[2,0],None],[[2,3],sol],[[3,0],sol]]
 m = Mesh(points, triangles, boundaryEdges)
 error = []
-for i in range(0,7):
+for i in range(0,4):
     m.refineMesh(1)
     # m.plotTriangles()
     #Initiate Finite element class, with the PDE

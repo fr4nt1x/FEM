@@ -25,7 +25,7 @@ def f(x):
     return result
 
 points = np.array([[0,0],[0,-1],[1,-1],[1,1],[-1,1],[-1,0]])
-triangles = [[0,1,2],[0,2,3],[0,3,4],[0,4,5]]
+triangles = [[0,1,2],[0,2,3],[0,3,4],[0,4,5]] 
 boundaryEdges = [[[0,1],sol],[[1,2],sol],[[2,0],None],[[2,3],sol],[[3,0],None],[[3,4],sol],[[4,0],None],[[4,5],sol],[[5,0],sol]]
 m = Mesh(points, triangles, boundaryEdges)
 error = []
@@ -46,10 +46,10 @@ for i in range(0,5):
 print(error)
 
 #Plots the Fem solution
-# fig = plt.figure()
-# ax = Axes3D(fig)
-# ax.text(0.5,0.5,1,"FEM - solution",color="red")
-# ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.triangles.copy(),Fem.solution)
+fig = plt.figure()
+ax = Axes3D(fig)
+ax.text(0.5,0.5,1,"FEM - solution",color="red")
+ax.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.triangles.copy(),Fem.solution)
 
 xs = []
 ys = []
@@ -58,7 +58,7 @@ for index,x in enumerate(Fem.triangulation.points):
     if x[1] == 0:
         als.append([x[0],Fem.solution[index]])
 als = sorted(als, key  = lambda x : x[0])
-plt.plot([x[0] for x in als],[x[1] for x in als])
+# plt.plot([x[0] for x in als],[x[1] for x in als])
 #Plots the exact solution
 # fig1 = plt.figure()
 # ax1 = Axes3D(fig1)

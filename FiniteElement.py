@@ -19,7 +19,7 @@ class FiniteElement:
     All the integrals that are needed for Stiffnessmatrix and Righthandside get calculated via a reference triangle.
     """
 
-    def __init__(self,mesh,PDEMatrix=np.eye(2),functionRHS = None, evaluatedAtTrianglePoints = None):
+    def __init__(self,mesh,PDEMatrix=np.eye(2),functionRHS = None, RHSEvaluatedAtTrianglePoints = None):
         """
         Initiates the triangulation and calculates the stiffness matrix and righthand side
 
@@ -48,9 +48,9 @@ class FiniteElement:
         #Calculate a delaunay triangulation of the input points
         self.mesh = mesh
         self.triangulation = self.mesh
-        self.evaluatedAtTrianglePoints = evaluatedAtTrianglePoints
+        self.RHSEvaluatedAtTrianglePoints = RHSEvaluatedAtTrianglePoints
         if self.functionRHS != None: 
-            self.evaluatedAtTrianglePoints = [self.functionRHS(x) for x in self.triangulation.points]
+            self.RHSEvaluatedAtTrianglePoints = [self.functionRHS(x) for x in self.triangulation.points]
             
         #Uses to initiate the stiffness matrix and the Rhs with the correct size
         self.numberDOF = np.size(self.triangulation.points[:,0])
@@ -200,7 +200,7 @@ class FiniteElement:
         determinant = abs(np.linalg.det(transformMatrix))
 
         trianglePoints =self.triangulation.triangles[triangleIndex]
-        elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.evaluatedAtTrianglePoints[x] for x in trianglePoints] ))
+        elementRHS = determinant*np.dot(self.elementaryBasisMatrix,np.array([self.RHSEvaluatedAtTrianglePoints[x] for x in trianglePoints] ))
         #print("fun",np.array([[x,self.functionRHS(x)] for x in trianglePoints] ))
         #print(self.triangulation.simplices[triangleIndex])
         return elementRHS

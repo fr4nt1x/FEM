@@ -16,7 +16,7 @@ class ProjectedGradient:
         
     """
 
-    def __init__(self,mesh,startControl, uDesired, alpha= 1,tol= 1e-12, maxSteps = 500):
+    def __init__(self,mesh,startControl, uDesired, RHSAddendum=0, alpha= 1,tol= 1e-12, maxSteps = 500):
         self.mesh = mesh
         self.startControl = startControl
         self.control = self.startControl
@@ -26,9 +26,10 @@ class ProjectedGradient:
         self.state = None
         self.adjointState = None 
         self.maxSteps= maxSteps
+        self.RHSAddendum = RHSAddendum
 
     def solveState(self):
-        Fem = FiniteElement(self.mesh,PDEMatrix= np.array([[1,0],[0,1]]),RHSEvaluatedAtTrianglePoints = self.control)
+        Fem = FiniteElement(self.mesh,PDEMatrix= np.array([[1,0],[0,1]]),RHSEvaluatedAtTrianglePoints = np.array(self.control)+self.RHSAddendum)
         Fem.calculateGlobalStiffnessMatrix()
         Fem.calculateRightHandSide()
         Fem.solve()
@@ -46,13 +47,13 @@ class ProjectedGradient:
         self.solveAdjoint()
         # print("state",self.state)
         # print("adjoint",self.adjointState)
-        self.control = -1/self.alpha * self.adjointState
+        self.control = (-1/self.alpha) * self.adjointState
 
     def solve(self):
         for step in range(0,self.maxSteps):
             oldControl = self.control
             self.calculateOneStep()
             if np.linalg.norm(self.control - oldControl, np.infty) <= self.tolerance:
-                print("Tolerance reached")
+                print("Tolerance reached in "+ str(step)+ ".")
                 break
 

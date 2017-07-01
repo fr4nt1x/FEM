@@ -34,7 +34,7 @@ m = Mesh(points, triangles, boundaryEdges)
 error = []
 error2 = []
 
-for i in range(0,4):
+for i in range(0,5):
 
     m.refineMesh(1)
     proj = ProjectedGradient(m,[f(x) for x in m.points], [u_d(x) for x in m.points], [RHSAddendum(x) for x in m.points], alpha, tol = 1e-12)
@@ -44,10 +44,31 @@ for i in range(0,4):
 
 # m.plotTriangles()
 
-fig = plt.figure()
-ax = Axes3D(fig)
-ax.text(0,0.5,0,"Control",color="red")
-ax.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),proj.control)
+# for ele,triPoints in enumerate(proj.mesh.triangles):
+    # transformMatrix,translateVector = proj.calculateTransform(ele)
+    # determinant = abs(np.linalg.det(transformMatrix))
+    # #Last vector is the precalculated integral of the basisfunctions over a reference element
+    # def control(x):
+        # #onlz points at the transformed triangle should be put in
+        # x = np.dot(np.linalg.inv(transformMatrix),x-translateVector)
+        # return proj.control[triPoints[0]]*proj.linearBasis[0](x)+ proj.control[triPoints[1]]*proj.linearBasis[1](x)+proj.control[triPoints[2]]*proj.linearBasis[2](x)
+
+    # fig = plt.figure()
+    # ax = Axes3D(fig)
+    # ax.text(0,0.5,0,"control",color="red")
+    # ax.plot_trisurf(proj.mesh.points[triPoints][:,0],proj.mesh.points[triPoints][:,1],[control(x) for x in proj.mesh.points[triPoints]])
+
+    # fig1 = plt.figure()
+    # ax1 = Axes3D(fig1)
+    # ax1.text(0,0.5,0,"control calculated",color="red")
+    # ax1.plot_trisurf(proj.mesh.points[triPoints][:,0],proj.mesh.points[triPoints][:,1],proj.control[triPoints])
+    # plt.show()
+
+
+# fig = plt.figure()
+# ax = Axes3D(fig)
+# ax.text(0,0.5,0,"Control",color="red")
+# ax.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),proj.control)
 
 # fig1 = plt.figure()
 # ax1 = Axes3D(fig1)
@@ -58,9 +79,11 @@ ax.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),proj.control)
 # ax4 = Axes3D(fig2)
 # ax4.text(0,0.5,0,"State real",color="red")
 # ax4.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),[state(p) for p in m.points])
+print("Gauss:")
 for index, e in enumerate(error):
     if index < len(error)-1:
         print(np.log(error[index+1][0]/e[0])/np.log(error[index+1][1]/e[1]))
+print("WithoutGauss:")
 for index, e in enumerate(error2):
     if index < len(error2)-1:
         print(np.log(error2[index+1][0]/e[0])/np.log(error2[index+1][1]/e[1]))

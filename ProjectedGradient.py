@@ -134,12 +134,15 @@ class ProjectedGradient:
         value = 0
         for ele,triPoints in enumerate(self.mesh.triangles):
             transformMatrix,translateVector = self.calculateTransform(ele)
+            invTransformMatrix = np.linalg.inv(transformMatrix)
             determinant = abs(np.linalg.det(transformMatrix))
             #Last vector is the precalculated integral of the basisfunctions over a reference element
             def error(x):
-                return (self.control[triPoints[0]]*self.linearBasis[0](x)+ self.control[triPoints[1]]*self.linearBasis[1](x)+self.control[triPoints[2]]*self.linearBasis[2](x)-exactSolution(x))**2
+                #points at the transformed triangle as call parameter, need to be transformed to the basis triangle
+                xRef = np.dot(invTransformMatrix,x-translateVector)
+                return (self.control[triPoints[0]]*self.linearBasis[0](xRef)+ self.control[triPoints[1]]*self.linearBasis[1](xRef)+self.control[triPoints[2]]*self.linearBasis[2](xRef)-exactSolution(x))**2
                 
 
-            value+=self.calculateIntegralOverTriangleGauss(error,ele,4)
+            value+=self.calculateIntegralOverTriangleGauss(error,ele,9)
     
         return(math.sqrt(value))

@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import os
 import pprint
+import json
 
 class Mesh:
     """
@@ -9,13 +11,47 @@ class Mesh:
     Is initiated with a list of points, and a list of triangles which hold indices.
     """
 
-    def __init__(self,points,triangles,boundaryEdges):
+    def __init__(self,points,triangles,boundaryEdges,polygonalBoundary):
         self.points = points
         self.triangles = triangles
         self.edges = boundaryEdges
+        self.polygonalBoundary = polygonalBoundary
         self.boundaryValues = self.generateBoundaryValues()
         self.trianglesWithEdges = self.initiateTrianglesWithEdges() 
         self.diam = self.getDiameter() 
+
+    def dumpToJson(self,FolderName,SuffixName):
+
+        with open(os.path.join(FolderName,"Triangles_"+SuffixName),'w') as fileTriangles:
+            json.dump(self.triangles,fileTriangles)
+        
+        with open(os.path.join(FolderName,"Points_"+SuffixName),'w') as fileToWrite:
+            json.dump(self.points.tolist(),fileToWrite)
+        
+        with open(os.path.join(FolderName,"Edges_"+SuffixName),'w') as fileToWrite:
+            json.dump(self.edges,fileToWrite)
+
+    def loadFromJson(self,FolderName,SuffixName):
+
+        edges = None
+        points = None
+        triangles = None
+        with open(os.path.join(FolderName,"Triangles_"+SuffixName),'r') as fileTriangles:
+            triangles = json.load(fileTriangles)
+        
+        with open(os.path.join(FolderName,"Points_"+SuffixName),'r') as fileToLoad:
+            points =np.array( json.load(fileToLoad))
+        
+        with open(os.path.join(FolderName,"Edges_"+SuffixName),'r') as fileToLoad:
+            edges = json.load(fileToLoad)
+        self.points = points
+        self.edges = edges
+        self.triangles = triangles
+        self.boundaryValues = self.generateBoundaryValues()
+        #needed for get diameter
+        self.trianglesWithEdges = self.initiateTrianglesWithEdges()
+        self.diam = self.getDiameter()
+        print("Loading Done.")
 
     def getDiameter(self):
         diam = 0
@@ -37,11 +73,13 @@ class Mesh:
         return trianglesWithEdges
             
     def generateBoundaryValues(self):
+        """Generates the Index Value pairs that are needed for the FEM calculation
+        """
         boundaryValues = []
         for edgeSol in self.edges:
             for pointIndex in edgeSol[0]:
                 if edgeSol[1] != None and pointIndex not in [x[0] for x in boundaryValues]:
-                    boundaryValues.append([pointIndex,edgeSol[1](self.points[pointIndex])])
+                    boundaryValues.append([pointIndex,self.polygonalBoundary.functionAtEdges[edgeSol[1]](self.points[pointIndex])])
         return np.array(boundaryValues)
 
     def plotTriangles (self):
@@ -175,5 +213,5 @@ class Mesh:
             self.generateNewTriangles(listOfEdges,indexOfNewPoints)
             self.boundaryValues = self.generateBoundaryValues()
             self.diam = self.diam*0.5
-
+        print("Refinement Done")
                 

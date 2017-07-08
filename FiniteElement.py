@@ -81,6 +81,7 @@ class FiniteElement:
         
         #strong form of PDE is: div(A dot grad(u)) = f, where A is PDEMatrix
         self.PDEMatrix= PDEMatrix
+        print("FEM init finished")
 
     def checkPrescribedValues(self,prescribedValues):
         """

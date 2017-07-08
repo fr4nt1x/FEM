@@ -6,6 +6,7 @@ import math
 from Mesh import Mesh
 from numpy import linalg
 from ProjectedGradient import ProjectedGradient
+from Boundary import PolygonalBoundary 
 
 alpha = 1
 
@@ -24,13 +25,16 @@ def f(x):
 
 u_d = lambda x : state(x) + 2/alpha*( (x[0]-x[0]**2)+ (x[1]-x[1]**2))
 
-def boundrayFunc(x):
+def boundaryFunc(x):
     return 0;
 
 points = np.array([[0,0],[1,0],[1,1],[0,1]])
 triangles = [[0,1,2],[2,3,0]]
-boundaryEdges = [[[0,1],boundrayFunc],[[1,2],boundrayFunc],[[2,0],None],[[2,3],boundrayFunc],[[3,0],boundrayFunc]]
-m = Mesh(points, triangles, boundaryEdges)
+boundaryEdges = [[[0,1],0],[[1,2],1],[[2,0],None],[[2,3],2],[[3,0],3]]
+polBoundary= PolygonalBoundary(points, [boundaryFunc]*np.shape(points)[0])
+
+m = Mesh(points, triangles, boundaryEdges,polBoundary)
+
 error = []
 error2 = []
 

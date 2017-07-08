@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,7 +27,7 @@ print(polBoundary.functionAtEdges)
 
 m = Mesh(points, triangles, boundaryEdges,polBoundary)
 error = []
-for i in range(2,10):
+for i in range(2,5):
     print("STEP: "+str(i))
     m.refineMesh(1)
     # m.plotTriangles()

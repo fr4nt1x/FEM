@@ -27,18 +27,6 @@ class ProjectedGradient:
         self.adjointState = None 
         self.maxSteps= maxSteps
         self.RHSAddendum = RHSAddendum
-        self.maxDiam = 0
-        #referenceElement holds the points of the reference element from which all other elements
-        #are calculated
-        self.referenceElement = np.array([[0,0],[1.,0],[0,1.]])
-
-        #the 3 linear Basis funtctions on the reference triangle
-        #each has the value 1 at one points and 0 at the other points
-        #Numbering of the vertices according to self.referenceElement
-        self.linearBasis = []
-        self.linearBasis.append(lambda x : 1-x[0]-x[1])
-        self.linearBasis.append(lambda x : x[0])
-        self.linearBasis.append(lambda x : x[1])
 
     def solveState(self):
         Fem = FiniteElement(self.mesh,PDEMatrix= np.array([[1,0],[0,1]]),RHSEvaluatedAtTrianglePoints = np.array(self.control)+self.RHSAddendum)
@@ -69,26 +57,6 @@ class ProjectedGradient:
                 print("Tolerance reached in "+ str(step)+ ".")
                 break
 
-    def calculateTransform(self,triangleIndex):
-        """ Calculates the affine linear transform from the reference
-            Element to the given Triangle (Lx+b) with matrix 2x2 L and vector b
-            and returns both of them in a tuple.
-        """
-        
-        #get the pointcoordinates via the point indices of the specified element
-        trianglePoints = self.mesh.points[self.mesh.triangles.copy()[triangleIndex]]
-
-        #calculate the Diameter and save it if a new maximum arises
-        self.maxDiam = max(np.linalg.norm(trianglePoints[0]-trianglePoints[1]),np.linalg.norm(trianglePoints[0]-trianglePoints[2]),np.linalg.norm(trianglePoints[2]-trianglePoints[1]),self.maxDiam)
-
-        #hold the coordinates both elements with ones appended as last row
-        referenceCoord = np.array([self.referenceElement[:,0],self.referenceElement[:,1],np.array([1,1,1])])       
-        transformedCoord = np.array([trianglePoints[:,0],trianglePoints[:,1],np.array([1,1,1])])
-        C = np.dot( transformedCoord,np.linalg.inv(referenceCoord)) 
-        
-        #L is in the first n x n submatrix of (n+1) x (n+1) Matrix C, b the last column without the last entry 
-        return (C[0:-1,0:-1],C[:-1,-1])
-
     def calculateIntegralOverTriangleGauss(self,f,triangleIndex,degree):
         """
         Calculates the Integral int{f} with transformation formula, and Gauss Legendre quadrature
@@ -96,7 +64,7 @@ class ProjectedGradient:
         Not used for linear elements, but can be used for higher order elements
         """
 
-        transformMatrix,translateVector = self.calculateTransform(triangleIndex)
+        transformMatrix,translateVector = self.mesh.calculateTransform(triangleIndex)
         determinant = abs(np.linalg.det(transformMatrix))
 
         
@@ -121,7 +89,7 @@ class ProjectedGradient:
         value = 0
         error = np.array(self.control)-np.array([exactSolution(x) for x in self.mesh.points])
         for ele,triPoints in enumerate(self.mesh.triangles):
-            transformMatrix,translateVector = self.calculateTransform(ele)
+            transformMatrix,translateVector = self.mesh.calculateTransform(ele)
             determinant = abs(np.linalg.det(transformMatrix))
             #Last vector is the precalculated integral of the basisfunctions over a reference element
             value+=determinant*np.dot(error[triPoints]**2,np.array([1/6.,1/3.,1/3.]))
@@ -133,14 +101,14 @@ class ProjectedGradient:
         """
         value = 0
         for ele,triPoints in enumerate(self.mesh.triangles):
-            transformMatrix,translateVector = self.calculateTransform(ele)
+            transformMatrix,translateVector = self.mesh.calculateTransform(ele)
             invTransformMatrix = np.linalg.inv(transformMatrix)
             determinant = abs(np.linalg.det(transformMatrix))
             #Last vector is the precalculated integral of the basisfunctions over a reference element
             def error(x):
                 #points at the transformed triangle as call parameter, need to be transformed to the basis triangle
                 xRef = np.dot(invTransformMatrix,x-translateVector)
-                return (self.control[triPoints[0]]*self.linearBasis[0](xRef)+ self.control[triPoints[1]]*self.linearBasis[1](xRef)+self.control[triPoints[2]]*self.linearBasis[2](xRef)-exactSolution(x))**2
+                return (self.control[triPoints[0]]*self.mesh.linearBasis[0](xRef)+ self.control[triPoints[1]]*self.mesh.linearBasis[1](xRef)+self.control[triPoints[2]]*self.mesh.linearBasis[2](xRef)-exactSolution(x))**2
                 
 
             value+=self.calculateIntegralOverTriangleGauss(error,ele,9)

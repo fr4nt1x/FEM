@@ -1,4 +1,5 @@
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import time
 import os
@@ -13,12 +14,46 @@ class Mesh:
 
     def __init__(self,points,triangles,boundaryEdges,polygonalBoundary):
         self.points = points
+        self.valuesAtPoints = np.zeros(np.shape(self.points)[0])
         self.triangles = triangles
         self.edges = boundaryEdges
         self.polygonalBoundary = polygonalBoundary
         self.boundaryValues = self.generateBoundaryValues()
         self.trianglesWithEdges = self.initiateTrianglesWithEdges() 
         self.diam = self.getDiameter() 
+        #referenceElement holds the points of the reference element from which all other elements
+        #are calculated
+        self.referenceElement = np.array([[0,0],[1.,0],[0,1.]])
+        #the 3 linear Basis funtctions on the reference triangle
+        #each has the value 1 at one points and 0 at the other points
+        #Numbering of the vertices according to self.referenceElement
+        self.linearBasis = []
+        self.linearBasis.append(lambda x : 1-x[0]-x[1])
+        self.linearBasis.append(lambda x : x[0])
+        self.linearBasis.append(lambda x : x[1])
+
+        #gradients of the basis functions on a reference triangle
+        self.gradBasis = []
+        self.gradBasis.append(np.array([-1.,-1])) 
+        self.gradBasis.append(np.array([1.,0]))
+        self.gradBasis.append(np.array([0,1.]))
+
+    def calculateTransform(self,triangleIndex):
+        """ Calculates the affine linear transform from the reference
+            Element to the given Triangle (Lx+b) with matrix 2x2 L and vector b
+            and returns both of them in a tuple.
+        """
+        
+        #get the pointcoordinates via the point indices of the specified element
+        trianglePoints = self.points[self.triangles.copy()[triangleIndex]]
+
+        #hold the coordinates both elements with ones appended as last row
+        referenceCoord = np.array([self.referenceElement[:,0],self.referenceElement[:,1],np.array([1,1,1])])       
+        transformedCoord = np.array([trianglePoints[:,0],trianglePoints[:,1],np.array([1,1,1])])
+        C = np.dot( transformedCoord,np.linalg.inv(referenceCoord)) 
+        
+        #L is in the first n x n submatrix of (n+1) x (n+1) Matrix C, b the last column without the last entry 
+        return (C[0:-1,0:-1],C[:-1,-1])
 
     def dumpToJson(self,FolderName,SuffixName):
 
@@ -184,6 +219,24 @@ class Mesh:
         # print("TRIANGLESWITHEDGES")
         # pprint.pprint(self.trianglesWithEdges)
 
+    def plotValues(self):
+        #Plots the Fem solution
+        fig = plt.figure()
+        ax = Axes3D(fig)
+        ax.text(0.5,0.5,1,"Mesh Values",color="red")
+        ax.plot_trisurf(self.points[:,0],self.points[:,1],self.triangles.copy(),self.valuesAtPoints)
+
+
+    def setValuesAtPoints(self,values):
+        if isinstance(values,list):
+            values = np.array(values)            
+        shapeValues = np.shape(values) 
+        numberOfPoints = np.shape(self.points)[0]
+        if (numberOfPoints,) == shapeValues:
+            self.valuesAtPoints = values
+        else:
+            print("Error: Shape of Values does not match shape of points.")
+
     def refineMesh(self,refinementSteps):
         for step in range(1,refinementSteps+1):
             listOfEdges = [x[0] for x in self.edges]
@@ -192,6 +245,8 @@ class Mesh:
             numberOfOldPoints =  np.shape(self.points)[0]
             newPoints = np.zeros([numberOfNewPoints + numberOfOldPoints,2])
             newPoints[0:numberOfOldPoints,:] = self.points 
+            newValues= np.zeros([numberOfNewPoints + numberOfOldPoints])
+            newValues[0:numberOfOldPoints] = self.valuesAtPoints
             newTriangles = [] 
             indexOfNewPoints = []
             newEdges = [None]*(2*numberOfNewPoints)  
@@ -202,13 +257,18 @@ class Mesh:
                 firstPoint = self.points[int(edge[0])]
                 secondPoint = self.points[int(edge[1])]
                 newPoint = 0.5 * (firstPoint + secondPoint) 
+                firstValue= self.valuesAtPoints[int(edge[0])]
+                secondValue= self.valuesAtPoints[int(edge[1])]
+                newValue= 0.5 * (firstValue+ secondValue) 
                 newIndex = numberOfOldPoints + index
                 newEdges[2*index] = [[int(edge[0]),newIndex],self.edges[index][1]] 
                 newEdges[2*index+1] = [[newIndex,int(edge[1])],self.edges[index][1]] 
                 newPoints[newIndex,:] = newPoint 
+                newValues[newIndex] = newValue
                 indexOfNewPoints.append(newIndex)
                     
             self.points = newPoints
+            self.valuesAtPoints=newValues 
             self.edges = newEdges
             self.generateNewTriangles(listOfEdges,indexOfNewPoints)
             self.boundaryValues = self.generateBoundaryValues()

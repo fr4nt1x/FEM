@@ -41,9 +41,6 @@ class FiniteElement:
         
         self.functionRHS= functionRHS
 
-        #referenceElement holds the points of the reference element from which all other elements
-        #are calculated
-        self.referenceElement = np.array([[0,0],[1.,0],[0,1.]])
 
         #Calculate a delaunay triangulation of the input points
         self.mesh = mesh
@@ -55,23 +52,7 @@ class FiniteElement:
         #Uses to initiate the stiffness matrix and the Rhs with the correct size
         self.numberDOF = np.size(self.triangulation.points[:,0])
 
-        #is the biggest side of the triangulation
-        self.maxDiam = 0
-
         self.prescribedValues = np.array(mesh.boundaryValues)
-        #the 3 linear Basis funtctions on the reference triangle
-        #each has the value 1 at one points and 0 at the other points
-        #Numbering of the vertices according to self.referenceElement
-        self.linearBasis = []
-        self.linearBasis.append(lambda x : 1-x[0]-x[1])
-        self.linearBasis.append(lambda x : x[0])
-        self.linearBasis.append(lambda x : x[1])
-
-        #gradients of the basis functions on a reference triangle
-        self.gradBasis = []
-        self.gradBasis.append(np.array([-1.,-1])) 
-        self.gradBasis.append(np.array([1.,0]))
-        self.gradBasis.append(np.array([0,1.]))
 
         #Holds integral of two basisfunctons over one reference triangle
         self.elementaryBasisMatrix = 1.0/12*np.array([[1.,0.5,0.5],[0.5,1.,0.5],[0.5,0.5,1.]])
@@ -95,26 +76,6 @@ class FiniteElement:
         else:
             return True 
 
-    def calculateTransform(self,triangleIndex):
-        """ Calculates the affine linear transform from the reference
-            Element to the given Triangle (Lx+b) with matrix 2x2 L and vector b
-            and returns both of them in a tuple.
-        """
-        
-        #get the pointcoordinates via the point indices of the specified element
-        trianglePoints = self.triangulation.points[self.triangulation.triangles.copy()[triangleIndex]]
-
-        #calculate the Diameter and save it if a new maximum arises
-        self.maxDiam = max(np.linalg.norm(trianglePoints[0]-trianglePoints[1]),np.linalg.norm(trianglePoints[0]-trianglePoints[2]),np.linalg.norm(trianglePoints[2]-trianglePoints[1]),self.maxDiam)
-
-        #hold the coordinates both elements with ones appended as last row
-        referenceCoord = np.array([self.referenceElement[:,0],self.referenceElement[:,1],np.array([1,1,1])])       
-        transformedCoord = np.array([trianglePoints[:,0],trianglePoints[:,1],np.array([1,1,1])])
-        C = np.dot( transformedCoord,np.linalg.inv(referenceCoord)) 
-        
-        #L is in the first n x n submatrix of (n+1) x (n+1) Matrix C, b the last column without the last entry 
-        return (C[0:-1,0:-1],C[:-1,-1])
-
     
     def calculateElementStiffnessMatrix(self,triangleIndex):
         """
@@ -122,7 +83,7 @@ class FiniteElement:
         from the reference Element with transformation formula and the exact integrals of two  reference Gradients
         """
 
-        transformMatrix,translateVector = self.calculateTransform(triangleIndex)
+        transformMatrix,translateVector = self.mesh.calculateTransform(triangleIndex)
         transformMatrixInv = np.linalg.inv(transformMatrix)
 
         #needed for the Integraltransformation
@@ -134,7 +95,7 @@ class FiniteElement:
         for row,column in product(range(3),range(3)):
             # 0.5 is the area of the reference triangle, since all functions are constant for
             #linear elements this yields the integral
-            elementStiffnessMatrix[row,column] = 0.5*determinant *np.dot(np.dot(np.dot(self.PDEMatrix,transformMatrixInv.T),self.gradBasis[row]),np.dot(transformMatrixInv.T,self.gradBasis[column]))
+            elementStiffnessMatrix[row,column] = 0.5*determinant *np.dot(np.dot(np.dot(self.PDEMatrix,transformMatrixInv.T),self.mesh.gradBasis[row]),np.dot(transformMatrixInv.T,self.mesh.gradBasis[column]))
         return elementStiffnessMatrix
 
     def calculateGlobalStiffnessMatrix(self):
@@ -197,7 +158,7 @@ class FiniteElement:
         Expands the given function in the same linear basis f(x) = Sum(f_i phi_i) and uses the precalculated
         integrals of two basisfunctions multiplied with each other. 
         """
-        transformMatrix,translateVector = self.calculateTransform(triangleIndex)
+        transformMatrix,translateVector = self.mesh.calculateTransform(triangleIndex)
         determinant = abs(np.linalg.det(transformMatrix))
 
         trianglePoints =self.triangulation.triangles[triangleIndex]
@@ -213,7 +174,7 @@ class FiniteElement:
         Not used for linear elements, but can be used for higher order elements
         """
 
-        transformMatrix,translateVector = self.calculateTransform(triangleIndex)
+        transformMatrix,translateVector = self.mesh.calculateTransform(triangleIndex)
         determinant = abs(np.linalg.det(transformMatrix))
 
         
@@ -227,7 +188,7 @@ class FiniteElement:
             for indexX,pointX in enumerate(gPoints):
                 for indexY,pointY in enumerate(gPoints):
                     transformedPoint = np.dot(transformMatrix,np.array([(1+pointX)*0.5,(1-pointX)*(1+pointY)*0.25])) +translateVector
-                    entry+= determinant*0.5*(1-pointX)*0.125*self.functionRHS(transformedPoint)*gWeigths[indexX]*gWeigths[indexY]*self.linearBasis[i](np.array([(1+pointX)*0.5,(1-pointX)*(1+pointY)*0.25]))
+                    entry+= determinant*0.5*(1-pointX)*0.125*self.functionRHS(transformedPoint)*gWeigths[indexX]*gWeigths[indexY]*self.mesh.linearBasis[i](np.array([(1+pointX)*0.5,(1-pointX)*(1+pointY)*0.25]))
                     #0.5 comes from transformation of reference triangle to standard square [-1,1] x [-1,1]
             elementRHS.append(entry)
         return elementRHS
@@ -245,7 +206,7 @@ class FiniteElement:
         value = 0
         error = np.array(self.solution)-np.array([exactSolution(x) for x in self.triangulation.points])
         for ele,triPoints in enumerate(self.triangulation.triangles):
-            transformMatrix,translateVector = self.calculateTransform(ele)
+            transformMatrix,translateVector = self.mesh.calculateTransform(ele)
             determinant = abs(np.linalg.det(transformMatrix))
             #Last vector is the precalculated integral of the basisfunctions over a reference element
             value+=determinant*np.dot(error[triPoints]**2,np.array([1/6.,1/3.,1/3.]))

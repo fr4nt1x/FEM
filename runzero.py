@@ -23,11 +23,10 @@ points = np.array([[0,0],[1,0],[1,1],[0,1]])
 triangles = [[0,1,2],[2,3,0]]
 boundaryEdges = [[[0,1],0],[[1,2],1],[[2,0],None],[[2,3],2],[[3,0],3]]
 polBoundary= PolygonalBoundary(points, [sol]*np.shape(points)[0])
-print(polBoundary.functionAtEdges)
 
 m = Mesh(points, triangles, boundaryEdges,polBoundary)
 error = []
-for i in range(2,5):
+for i in range(2,3):
     print("STEP: "+str(i))
     m.refineMesh(1)
     # m.plotTriangles()

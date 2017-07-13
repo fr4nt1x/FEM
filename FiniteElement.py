@@ -98,8 +98,12 @@ class FiniteElement:
             elementStiffnessMatrix[row,column] = 0.5*determinant *np.dot(np.dot(np.dot(self.PDEMatrix,transformMatrixInv.T),self.mesh.gradBasis[row]),np.dot(transformMatrixInv.T,self.mesh.gradBasis[column]))
         return elementStiffnessMatrix
 
-    def calculateGlobalStiffnessMatrix(self):
+    def calculateGlobalStiffnessMatrix(self,calculateWholeMatrix=False):
         """
+        calculateWholeMatrix  ... defines if the lines with the prescribedValues should
+                                  be changed to vectors with only one entry at the given
+                                  Index, where the Value is Prescribed. This gives the
+                                      possibility to insert Dirichlet Boundary naturally
         loops over all elements, calculates the element stiffness matrix and assemble them into a global 
         matrix in csc format
         """
@@ -115,13 +119,14 @@ class FiniteElement:
             #append the entries at the correct position in the global matrix, only if no Boundary
             #condition is prescribed at this degree of freedom 
             for row in range(3):
-                if self.prescribedValues != [] and triPoints[row] in self.prescribedValues[:,0]:
+                if not calculateWholeMatrix and self.prescribedValues != [] and triPoints[row] in self.prescribedValues[:,0]:
                     continue
                 else:
                     for column in range(3):
                         globalRowIndices.append(triPoints[row])
                         globalColumnIndices.append(triPoints[column])
                         globalData.append(eleStiffness[row,column])
+
         #Dirichlet boundaries at position j are enforced, by adding a row (0,0,..,1,...,0) (j-th entry),
         #and the value in the right hand side at the position j   
         for v in self.prescribedValues:
@@ -134,7 +139,7 @@ class FiniteElement:
         self.GlobalStiffness = sparse.coo_matrix((globalData,(globalRowIndices,globalColumnIndices))).tocsc() 
         # print(self.GlobalStiffness.toarray())
 
-    def calculateRightHandSide(self):
+    def calculateRightHandSide(self,overwriteBoundaryValues=True):
         """
         Calculates the Righthandside, by calling the entries for each element and assembling the result
         into an global vector
@@ -147,10 +152,18 @@ class FiniteElement:
             for index,entry in enumerate(elementRHS):
                 self.rightHandSide[triPoints[index]] += entry
 
-        #overwrite the values at the prescribed boundaries condition
-        for indexValue in self.prescribedValues:
-            self.rightHandSide[int(indexValue[0])] = indexValue[1]
+        if overwriteBoundaryValues :
+            self.overwriteBoundaryValuesRightHandSide()
         #print(self.rightHandSide)
+    
+    def overwriteBoundaryValuesRightHandSide(self):
+        """
+        Puts the Dirichlet Boundary Values presscribed in self.prescribedValues 
+        at the Places specified by their Index. This Enforces The Boundary Values       if also the lines in the GlobalStiffnessMatrix are replaced by unit vectors
+        """
+        for indexValue in self.prescribedValues:
+            print(indexValue)
+            self.rightHandSide[int(indexValue[0])] = indexValue[1]
     
     def calculateElementRightHandSide(self,triangleIndex):
         """

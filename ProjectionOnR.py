@@ -1,5 +1,6 @@
 import numpy as np
 from FiniteElement import FiniteElement
+from gaussIntegration import GaussIntegrator 
 
 
 
@@ -41,6 +42,7 @@ class ProjectionOnR():
         self.angleCoefficient = angleCoefficient
         self.r_h = np.zeros(self.numberOfPoints)
         self.p_h_tilde = np.zeros(self.numberOfPoints)
+        self.integrator = GaussIntegrator(self.mesh)
         self.p_h_star = np.zeros(self.numberOfPoints)
 
     def calculateR_h(self):
@@ -63,13 +65,24 @@ class ProjectionOnR():
         Fem = FiniteElement(self.mesh , PDEMatrix= np.array([[1,0],[0,1]]),functionRHS = lambda x : 0)
         Fem.calculateGlobalStiffnessMatrix(calculateWholeMatrix = True)
         Fem.rightHandSide = Fem.GlobalStiffness.dot(self.r_h) 
-        print("RHS: ")
-        print(Fem.rightHandSide)
         Fem.overwriteBoundaryValuesRightHandSide()
-        print("RHS2: ")
-        print(Fem.rightHandSide)
+        Fem.calculateGlobalStiffnessMatrix(calculateWholeMatrix = False)
+        Fem.solve()
+        self.p_h_star = Fem.solution
 
     def calculatePTilde(self):
         """
         """
+        self.p_h_tilde = self.p_h_star - self.r_h
+    
+    def calculateNormPTilde(self):
+        """
+        """
+        value = 0
+        for elem,triPoints in enumerate(self.mesh.triangles):
+            femFuncOverElement = self.integrator.getFiniteElementFunctionOverTriangle(self.p_h_tilde,elem)
+            value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElement(x)**2,elem,2)
+
+        self.normPTildeSquared = value
+
 

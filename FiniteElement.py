@@ -162,7 +162,6 @@ class FiniteElement:
         at the Places specified by their Index. This Enforces The Boundary Values       if also the lines in the GlobalStiffnessMatrix are replaced by unit vectors
         """
         for indexValue in self.prescribedValues:
-            print(indexValue)
             self.rightHandSide[int(indexValue[0])] = indexValue[1]
     
     def calculateElementRightHandSide(self,triangleIndex):

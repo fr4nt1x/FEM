@@ -2,6 +2,7 @@
 from Mesh import Mesh
 from FiniteElement import FiniteElement
 from numpy.polynomial.legendre import leggauss
+from gaussIntegration import GaussIntegrator
 import math
 
 import numpy as np
@@ -27,6 +28,7 @@ class ProjectedGradient:
         self.adjointState = None 
         self.maxSteps= maxSteps
         self.RHSAddendum = RHSAddendum
+        self.integrator = GaussIntegrator(mesh)
 
     def solveState(self):
         Fem = FiniteElement(self.mesh,PDEMatrix= np.array([[1,0],[0,1]]),RHSEvaluatedAtTrianglePoints = np.array(self.control)+self.RHSAddendum)
@@ -57,30 +59,6 @@ class ProjectedGradient:
                 print("Tolerance reached in "+ str(step)+ ".")
                 break
 
-    def calculateIntegralOverTriangleGauss(self,f,triangleIndex,degree):
-        """
-        Calculates the Integral int{f} with transformation formula, and Gauss Legendre quadrature
-        integral over a transformed element --> reference element --> standard square element
-        Not used for linear elements, but can be used for higher order elements
-        """
-
-        transformMatrix,translateVector = self.mesh.calculateTransform(triangleIndex)
-        determinant = abs(np.linalg.det(transformMatrix))
-
-        
-        trianglePoints =self.mesh.points[self.mesh.triangles[triangleIndex]]
-        gPoints,gWeigths = leggauss(degree)
-        #calculate each entry per Gaussintegration
-        entry = 0.0
-
-        #sum over weights evaluated at Gauss points,
-        for indexX,pointX in enumerate(gPoints):
-            for indexY,pointY in enumerate(gPoints):
-                transformedPoint = np.dot(transformMatrix,np.array([(1+pointX)*0.5,(1-pointX)*(1+pointY)*0.25])) +translateVector
-                entry+= determinant*0.5*(1-pointX)*0.125*f(transformedPoint)*gWeigths[indexX]*gWeigths[indexY]
-                #0.5 comes from transformation of reference triangle to standard square [-1,1] x [-1,1]
-        return entry
-
     def getL2ErrorControl(self,exactSolution):
         """
         Calculates the L2-Error for given exact solution, it projects the error to an 
@@ -103,7 +81,6 @@ class ProjectedGradient:
         for ele,triPoints in enumerate(self.mesh.triangles):
             transformMatrix,translateVector = self.mesh.calculateTransform(ele)
             invTransformMatrix = np.linalg.inv(transformMatrix)
-            determinant = abs(np.linalg.det(transformMatrix))
             #Last vector is the precalculated integral of the basisfunctions over a reference element
             def error(x):
                 #points at the transformed triangle as call parameter, need to be transformed to the basis triangle
@@ -111,6 +88,6 @@ class ProjectedGradient:
                 return (self.control[triPoints[0]]*self.mesh.linearBasis[0](xRef)+ self.control[triPoints[1]]*self.mesh.linearBasis[1](xRef)+self.control[triPoints[2]]*self.mesh.linearBasis[2](xRef)-exactSolution(x))**2
                 
 
-            value+=self.calculateIntegralOverTriangleGauss(error,ele,9)
+            value+=self.integrator.getIntegralOverTriangleGauss(error,ele,9)
     
         return(math.sqrt(value))

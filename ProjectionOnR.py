@@ -75,14 +75,14 @@ class ProjectionOnR():
         """
         self.p_h_tilde = self.p_h_star - self.r_h
     
-    def calculateNormPTilde(self):
+    def calculateNormPTildeSquared(self):
         """
         """
         value = 0
         for elem,triPoints in enumerate(self.mesh.triangles):
             femFuncOverElement = self.integrator.getFiniteElementFunctionOverTriangle(self.p_h_tilde,elem)
-            value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElement(x)**2,elem,2)
-
+            value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElement(x)**2,elem,3)
+            # print([self.mesh.points[x] for x in triPoints])
         self.normPTildeSquared = value
 
 

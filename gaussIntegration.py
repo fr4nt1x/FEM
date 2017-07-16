@@ -15,10 +15,12 @@ class GaussIntegrator():
         """
 
         transformMatrix,translateVector = self.mesh.calculateTransform(triangleIndex)
+        print("TriangleIndex: ",triangleIndex)
         determinant = abs(np.linalg.det(transformMatrix))
-
+        print(transformMatrix)
         
         trianglePoints =self.mesh.points[self.mesh.triangles[triangleIndex]]
+        print('trianglge', trianglePoints)
         gPoints,gWeigths = leggauss(degree)
         #calculate each entry per Gaussintegration
         entry = 0.0
@@ -27,7 +29,9 @@ class GaussIntegrator():
         for indexX,pointX in enumerate(gPoints):
             for indexY,pointY in enumerate(gPoints):
                 transformedPoint = np.dot(transformMatrix,np.array([(1+pointX)*0.5,(1-pointX)*(1+pointY)*0.25])) +translateVector
-                entry+= determinant*0.5*(1-pointX)*0.125*functionToIntegrate(transformedPoint)*gWeigths[indexX]*gWeigths[indexY]
+                #TODO 0.5 not sure if right
+                print("fuctionValue",transformedPoint,functionToIntegrate(transformedPoint),pointX,pointY)
+                entry+= determinant*(1-pointX)*0.125*functionToIntegrate(transformedPoint)*gWeigths[indexX]*gWeigths[indexY]
                 #0.5 comes from transformation of reference triangle to standard square [-1,1] x [-1,1]
         return entry
 
@@ -44,6 +48,7 @@ class GaussIntegrator():
             transformMatrix,translateVector = self.mesh.calculateTransform(element)
             invTransformMatrix = np.linalg.inv(transformMatrix)
             triPoints = self.mesh.triangles[element]
+            print('Values: ',valuesAtMeshPoints[triPoints])
 
             #Last vector is the precalculated integral of the basisfunctions over a reference element
             def func(x):

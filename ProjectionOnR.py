@@ -33,11 +33,13 @@ class ProjectionOnR():
              weak sense with p*_h is zero at boundary.
     """
 
-    def __init__(self,angleCoefficient,mesh,indexOfNonConvexCorner):
+    def __init__(self,angleCoefficient,mesh,indexOfNonConvexCorner,functionValuesToProject):
         """
         """
+        self.degreeOfGauss = 5
         self.mesh = mesh
         self.numberOfPoints = np.shape(self.mesh.points)[0]
+        self.functionValuesToProject = functionValuesToProject
         self.indexOfNonConvexCorner= indexOfNonConvexCorner
         self.angleCoefficient = angleCoefficient
         self.r_h = np.zeros(self.numberOfPoints)
@@ -72,8 +74,23 @@ class ProjectionOnR():
 
     def calculatePTilde(self):
         """
+        p_h_tilde = self.p_h_star - self.r_h + r^(-lam) * sin(theta*lam)
         """
-        self.p_h_tilde = self.p_h_star - self.r_h
+
+        indicesWithoutNonConvexCorner = [i for i,x in enumerate(self.mesh.points) if i != self.indexOfNonConvexCorner ]
+        points = self.mesh.points[indicesWithoutNonConvexCorner] 
+
+        theta =  np.arctan2(points[:,1],points[:,0])
+        
+        #negative Angles should be converted to positive Values to match the angleCOoefficient
+        theta = np.array([x if x >=0 else 2*np.pi + x for x in theta])
+
+        r = np.linalg.norm(points,axis=1)
+        r_h = np.zeros(self.numberOfPoints)
+        r_h[indicesWithoutNonConvexCorner] = r**(-self.angleCoefficient) * np.sin(self.angleCoefficient * theta)
+
+        self.r_test = r_h
+        self.p_h_tilde = self.p_h_star - self.r_h + r_h
     
     def calculateNormPTildeSquared(self):
         """
@@ -81,8 +98,16 @@ class ProjectionOnR():
         value = 0
         for elem,triPoints in enumerate(self.mesh.triangles):
             femFuncOverElement = self.integrator.getFiniteElementFunctionOverTriangle(self.p_h_tilde,elem)
-            value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElement(x)**2,elem,3)
+            value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElement(x)**2,elem,self.degreeOfGauss)
             # print([self.mesh.points[x] for x in triPoints])
         self.normPTildeSquared = value
 
+    def getProjectionOnR(self):
+        value = 0
+        for elem,triPoints in enumerate(self.mesh.triangles):
+            femFuncOverElement = self.integrator.getFiniteElementFunctionOverTriangle(self.p_h_tilde*self.functionValuesToProject,elem)
+            value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElement(x),elem,self.degreeOfGauss)
 
+        coefficientOfPs = value/self.normPTildeSquared
+        print(coefficientOfPs)
+        return self.functionValuesToProject - coefficientOfPs * self.p_h_tilde

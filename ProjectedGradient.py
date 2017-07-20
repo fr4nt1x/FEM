@@ -3,6 +3,7 @@ from Mesh import Mesh
 from FiniteElement import FiniteElement
 from numpy.polynomial.legendre import leggauss
 from gaussIntegration import GaussIntegrator
+from ProjectionOnR import ProjectionOnR
 import math
 
 import numpy as np
@@ -17,7 +18,7 @@ class ProjectedGradient:
         
     """
 
-    def __init__(self,mesh,startControl, uDesired, RHSAddendum=0, alpha= 1,tol= 1e-12, maxSteps = 500):
+    def __init__(self,mesh,startControl, uDesired, angleCoefficient, RHSAddendum=0, alpha= 1,tol= 1e-12, maxSteps = 500):
         self.mesh = mesh
         self.startControl = startControl
         self.control = self.startControl
@@ -29,6 +30,11 @@ class ProjectedGradient:
         self.maxSteps= maxSteps
         self.RHSAddendum = RHSAddendum
         self.integrator = GaussIntegrator(mesh)
+        self.ProjectorOnR = ProjectionOnR(angleCoefficient = angleCoefficient,mesh= self.mesh, indexOfNonConvexCorner = 0,functionValuesToProject = self.control)
+        self.ProjectorOnR.calculateR_h()
+        self.ProjectorOnR.calculatePStar()
+        self.ProjectorOnR.calculatePTilde()
+        self.ProjectorOnR.calculateNormPTildeSquared()
 
     def solveState(self):
         Fem = FiniteElement(self.mesh,PDEMatrix= np.array([[1,0],[0,1]]),RHSEvaluatedAtTrianglePoints = np.array(self.control)+self.RHSAddendum)
@@ -49,7 +55,9 @@ class ProjectedGradient:
         self.solveAdjoint()
         # print("state",self.state)
         # print("adjoint",self.adjointState)
-        self.control = (-1/self.alpha) * self.adjointState
+        self.ProjectorOnR.functionValuesToProject = (-1/self.alpha) * self.adjointState
+        self.control = self.ProjectorOnR.getProjectionOnR()
+        # self.control = self.ProjectorOnR.functionValuesToProject
 
     def solve(self):
         for step in range(0,self.maxSteps):

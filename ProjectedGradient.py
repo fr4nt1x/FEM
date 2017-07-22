@@ -2,6 +2,8 @@
 from Mesh import Mesh
 from FiniteElement import FiniteElement
 from numpy.polynomial.legendre import leggauss
+import json
+import os
 from gaussIntegration import GaussIntegrator
 from ProjectionOnR import ProjectionOnR
 import math
@@ -35,6 +37,7 @@ class ProjectedGradient:
         self.ProjectorOnR.calculatePStar()
         self.ProjectorOnR.calculatePTilde()
         self.ProjectorOnR.calculateNormPTildeSquared()
+        print("Norm:",self.ProjectorOnR.normPTildeSquared)
 
     def solveState(self):
         Fem = FiniteElement(self.mesh,PDEMatrix= np.array([[1,0],[0,1]]),RHSEvaluatedAtTrianglePoints = np.array(self.control)+self.RHSAddendum)
@@ -55,9 +58,30 @@ class ProjectedGradient:
         self.solveAdjoint()
         # print("state",self.state)
         # print("adjoint",self.adjointState)
-        self.ProjectorOnR.functionValuesToProject = (-1/self.alpha) * self.adjointState
-        self.control = self.ProjectorOnR.getProjectionOnR()
-        # self.control = self.ProjectorOnR.functionValuesToProject
+        self.ProjectorOnR.functionValuesToProject = (-1/self.alpha)* self.adjointState
+        self.control =  self.ProjectorOnR.getProjectionOnR()
+        # self.control = (-1/self.alpha)* self.adjointState
+
+    def dumpToJson(self,FolderName,SuffixName):
+
+        with open(os.path.join(FolderName,"State_"+SuffixName),'w') as fileState:
+            json.dump(self.state.tolist(),fileState)
+
+        with open(os.path.join(FolderName,"Control_"+SuffixName),'w') as fileControl:
+            json.dump(self.control.tolist(),fileControl)
+
+    def loadFromJson(self,FolderName,SuffixName):
+
+        state = None
+        control = None
+        with open(os.path.join(FolderName,"State_"+SuffixName),'r') as fileState:
+            state= np.array(json.load(fileState))
+
+        with open(os.path.join(FolderName,"Control_"+SuffixName),'r') as fileControl:
+            control= np.array(json.load(fileControl))
+
+        self.referenceControl = control
+        self.referenceState =state 
 
     def solve(self):
         for step in range(0,self.maxSteps):
@@ -67,13 +91,19 @@ class ProjectedGradient:
                 print("Tolerance reached in "+ str(step)+ ".")
                 break
 
-    def getL2ErrorControl(self,exactSolution):
+    def getL2ErrorControl(self,exactSolutionEvaluatedAtPoints):
         """
         Calculates the L2-Error for given exact solution, it projects the error to an 
         elementwise linear function and integrate this exact via transformation formula
         """
         value = 0
-        error = np.array(self.control)-np.array([exactSolution(x) for x in self.mesh.points])
+        newMesh = Mesh(self.mesh.points,self.mesh.triangles,self.mesh.edges,self.mesh.polygonalBoundary) 
+        newMesh.setValuesAtPoints(self.control)
+        print(np.shape(newMesh.points))
+        while (np.shape(newMesh.points)[0] != np.shape(exactSolutionEvaluatedAtPoints)[0]):
+            newMesh.refineMesh(1)
+            print("refinement ",np.shape(newMesh.points))
+        error = exactSolutionEvaluatedAtPoints-newMesh.valuesAtPoints
         for ele,triPoints in enumerate(self.mesh.triangles):
             transformMatrix,translateVector = self.mesh.calculateTransform(ele)
             determinant = abs(np.linalg.det(transformMatrix))

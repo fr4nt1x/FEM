@@ -100,6 +100,7 @@ class ProjectionOnR():
             femFuncOverElement = self.integrator.getFiniteElementFunctionOverTriangle(self.p_h_tilde,elem)
             value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElement(x)**2,elem,self.degreeOfGauss)
             # print([self.mesh.points[x] for x in triPoints])
+        print("NormPTildeSquared : ",value)
         self.normPTildeSquared = value
 
     def getProjectionOnR(self):
@@ -109,5 +110,4 @@ class ProjectionOnR():
             value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElement(x),elem,self.degreeOfGauss)
 
         coefficientOfPs = value/self.normPTildeSquared
-        print(coefficientOfPs)
         return self.functionValuesToProject - coefficientOfPs * self.p_h_tilde

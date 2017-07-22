@@ -19,15 +19,11 @@ sol = lambda x : 0
 # sol = lambda x : np.exp(x[0]+0.2*x[1])
 
 #right handside calculated to match exact solution
-def f(x):
-    if np.linalg.norm(x) >= 1e-10:
-        theta= np.arctan2(x[1],x[0])
-        if theta<0 :
-            theta+= 2*np.pi
-        result = np.linalg.norm(x)**(-lam) * np.sin(lam * theta)
-    else:
-        result = 0
-    return result
+def u(x):
+    return (x[0]**3-x[0])*(x[1]**3-x[1])
+
+def q(x):
+    return -6*(x[0]*(x[1]**3-x[1]) + x[1]*(x[0]**3-x[0]))
 
 points = np.array([[0,0],[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[-0.5,0.5]])
 polBoundary= PolygonalBoundary(points, [sol]*np.shape(points)[0])
@@ -37,28 +33,27 @@ triangles = [[0,1,2],[0,2,3],[0,3,8],[0,8,5],[8,3,4],[8,4,5],[0,5,6],[0,6,7]]
 boundaryEdges = [[[0,1],0],[[1,2],1],[[2,0],None],[[2,3],2],[[3,0],None],[[3,8],None],[[8,0],None],[[8,5],None],[[3,4],2],[[8,4],None],[[4,5],3],[[5,0],None],[[5,6],3],[[6,0],None],[[6,7],4],[[7,0],5]]
 m = Mesh(points, triangles, boundaryEdges, polBoundary)
 error = []
-m.refineMesh(3)
+m.refineMesh(5)
 # m.plotTriangles()
-projR= ProjectionOnR(angleCoefficient = lam,mesh= m,indexOfNonConvexCorner = 0,functionValuesToProject = [f(x) for x in m.points] )
-projR.degreeOfGauss = 10
+projR= ProjectionOnR(angleCoefficient = lam,mesh= m,indexOfNonConvexCorner = 0,functionValuesToProject = [q(x) for x in m.points] )
+projR.degreeOfGauss = 3
 
 projR.calculateR_h()
 projR.calculatePStar()
 projR.calculatePTilde()
 projR.calculateNormPTildeSquared()
-projR.functionValuesToProject = 2*projR.p_h_tilde
 proR = projR.getProjectionOnR()
 #Plots the Fem solution
 
 fig = plt.figure()
 ax = Axes3D(fig)
-ax.text(0.5,0.5,1,"singularPart",color="red")
+ax.text(0.5,0.5,1,"control",color="red")
 ax.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),projR.p_h_tilde)
 
 # fig1 = plt.figure()
 # ax1 = Axes3D(fig1)
-# ax1.text(0.5,0.5,1,"singularPart",color="red")
-# ax1.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),projR.p_h_tilde)
+# ax1.text(0.5,0.5,1,"state",color="red")
+# ax1.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),[u(x) for x in m.points])
 # plt.plot([x[0] for x in als],[x[1] for x in als])
 #Plots the exact solution
 # fig1 = plt.figure()

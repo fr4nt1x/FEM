@@ -13,12 +13,9 @@ m = Mesh(points, triangles, boundaryEdges,polBoundary)
 def f(x) :
     return np.sin(x[0])*np.sin(x[1])
 
-m.refineMesh(3)
-m.setValuesAtPoints([f(x) for x in m.points])
-m.plotValues()
-m.refineMesh(3)
-m.plotValues()
-plt.show()
+m.refineMeshHalf(1)
+m.plotTriangles()
+
 # m.dumpToJson("./meshtest","Ref9")
 
 # m2 = Mesh(points, triangles, boundaryEdges,polBoundary)

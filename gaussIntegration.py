@@ -21,19 +21,35 @@ class GaussIntegrator():
         
         trianglePoints =self.mesh.points[self.mesh.triangles[triangleIndex]]
         # print('trianglge', trianglePoints)
-        gPoints,gWeigths = leggauss(degree)
+        gPoints,gWeigths = self.getPointsAndWeightsOverReferenceTriangle(degree)
         #calculate each entry per Gaussintegration
         entry = 0.0
 
         #sum over weights evaluated at Gauss points,
+        for index,point in enumerate(gPoints):
+            print("PW",point,gWeigths[index])
+            transformedPoint = np.dot(transformMatrix,point) +translateVector
+            entry+= determinant*(1-point[0])*0.125*functionToIntegrate(transformedPoint)*gWeigths[index]
+            print("entri",entry)
+        return entry
+
+    def getPointsAndWeightsOverReferenceTriangle(self,degree):
+        """
+        Returns two Numpy Arrays, One with the Points inside the reference Triangle,
+        The other holds the weights at this points
+        """
+
+        gPoints,gWeights = leggauss(degree)
+        numberOfPoints = len(gPoints)**2
+        resultPoints = np.zeros((numberOfPoints,2))
+        resultWeights = np.zeros((numberOfPoints,1))
+        index2D = 0
         for indexX,pointX in enumerate(gPoints):
             for indexY,pointY in enumerate(gPoints):
-                transformedPoint = np.dot(transformMatrix,np.array([(1+pointX)*0.5,(1-pointX)*(1+pointY)*0.25])) +translateVector
-                #TODO 0.5 not sure if right
-                # print("fuctionValue",transformedPoint,functionToIntegrate(transformedPoint),pointX,pointY)
-                entry+= determinant*(1-pointX)*0.125*functionToIntegrate(transformedPoint)*gWeigths[indexX]*gWeigths[indexY]
-                #0.5 comes from transformation of reference triangle to standard square [-1,1] x [-1,1]
-        return entry
+                resultWeights[index2D] = gWeights[indexX]*gWeights[indexY] 
+                resultPoints[index2D,:] = np.array([(1+pointX)*0.5,(1-pointX)*(1+pointY)*0.25])
+                index2D += 1
+        return resultPoints,resultWeights
 
     def getIntegralOverDomain(self,functionToIntegrate,degree): 
         """

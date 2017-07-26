@@ -59,8 +59,8 @@ class ProjectedGradient:
         # print("state",self.state)
         # print("adjoint",self.adjointState)
         self.ProjectorOnR.functionValuesToProject = (-1/self.alpha)* self.adjointState
-        self.control =  self.ProjectorOnR.getProjectionOnR()
-        # self.control = (-1/self.alpha)* self.adjointState
+        # self.control =  self.ProjectorOnR.getProjectionOnR()
+        self.control = (-1/self.alpha)* self.adjointState
 
     def dumpToJson(self,FolderName,SuffixName):
 

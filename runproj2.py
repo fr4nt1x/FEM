@@ -21,7 +21,7 @@ def control(x):
 def RHSAddendum(x):
     return 2*((x[0]-x[0]**2)+ (x[1]-x[1]**2))- (x[0]-x[0]**2)*( x[1]-x[1]**2)
 
-u_d = lambda x : state(x) 
+u_d = lambda x : 1 
 
 def boundaryFunc(x):
     return 0;
@@ -38,12 +38,12 @@ m = Mesh(points, triangles, boundaryEdges,polBoundary)
 error = []
 error2 = []
 
-for i in range(0,4):
+for i in range(0,3):
     m.refineMesh(1)
     proj = ProjectedGradient(m,[0 for x in m.points], [u_d(x) for x in m.points],lam,  alpha, tol = 1e-10 )
     proj.solve()
-    # proj.loadFromJson(".","8")
-    # error.append([proj.mesh.getDiameter(),proj.getL2ErrorControl(proj.referenceControl)])
+    proj.loadFromJson(".","6")
+    error.append([proj.mesh.getDiameter(),proj.getL2ErrorControl(proj.referenceControl)])
 
 # proj.dumpToJson(".","8")
 # m.plotTriangles()
@@ -62,11 +62,11 @@ for i in range(0,4):
 # ax.text(0,0.5,0,"control",color="red")
 # ax.plot_trisurf(proj.mesh.points[:,0],proj.mesh.points[:,1],proj.mesh.triangles,[state(x) for x in proj.mesh.points])
 
-# fig1 = plt.figure()
-# ax1 = Axes3D(fig1)
-# ax1.text(0,0.5,0,"state",color="red")
-# ax1.plot_trisurf(proj.mesh.points[:,0],proj.mesh.points[:,1],proj.mesh.triangles,proj.state)
-# plt.show()
+fig1 = plt.figure()
+ax1 = Axes3D(fig1)
+ax1.text(0,0.5,0,"state",color="red")
+ax1.plot_trisurf(proj.mesh.points[:,0],proj.mesh.points[:,1],proj.mesh.triangles,proj.control)
+plt.show()
 
 
 # fig = plt.figure()

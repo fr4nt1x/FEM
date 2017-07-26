@@ -20,21 +20,21 @@ sol = lambda x : 0
 #right handside calculated to match exact solution
 def f(x):
     return 1
-points = np.array([[0,0],[0.5,0],[0.5,0.5],[0,0.5]])
+points = np.array([[0,0],[1,0],[0,1]])
 polBoundary= PolygonalBoundary(points, [sol]*np.shape(points)[0])
-triangles = [[0,1,2],[0,2,3]]
+triangles = [[0,1,2]]
 #the boundary edges holds all the edges of each traingle, as a  pair of an edge and 
 #the index of the polygonalBoundary it belongs to.
-boundaryEdges = [[[0,1],0],[[1,2],1],[[2,0],None],[[2,3],2],[[3,0],3]]
+boundaryEdges = [[[0,1],0],[[1,2],1],[[2,0],None]]
 m = Mesh(points, triangles, boundaryEdges, polBoundary)
-m.refineMesh(2)
+# m.refineMesh(1)
 # m.plotTriangles()
 GInteg = GaussIntegrator(m)
 value = 0
 for ele,triPoints in enumerate(m.triangles):
     g= GInteg.getFiniteElementFunctionOverTriangle([f(x) for x in m.points],ele)
-    value  += GInteg.getIntegralOverTriangleGauss(g,ele,1)
-    print(value)
+    value  += GInteg.getIntegralOverTriangleGauss(g,ele,3)
+print(value)
 
 #Plots the Fem solution
 # fig = plt.figure()

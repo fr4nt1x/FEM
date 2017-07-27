@@ -37,7 +37,6 @@ class ProjectedGradient:
         self.ProjectorOnR.calculatePStar()
         self.ProjectorOnR.calculatePTilde()
         self.ProjectorOnR.calculateNormPTildeSquared()
-        print("Norm:",self.ProjectorOnR.normPTildeSquared)
 
     def solveState(self):
         Fem = FiniteElement(self.mesh,PDEMatrix= np.array([[1,0],[0,1]]),RHSEvaluatedAtTrianglePoints = np.array(self.control)+self.RHSAddendum)

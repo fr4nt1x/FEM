@@ -58,9 +58,9 @@ class ProjectedGradient:
         self.solveAdjoint()
         # print("state",self.state)
         # print("adjoint",self.adjointState)
-        self.ProjectorOnR.functionValuesToProject = (-1/self.alpha)* self.adjointState
-        # self.control =  self.ProjectorOnR.getProjectionOnR()
-        self.control = (-1/self.alpha)* self.adjointState
+        self.ProjectorOnR.functionValuesToProject =  self.adjointState
+        self.control =  (-1/self.alpha)*self.ProjectorOnR.getProjectionOnR()
+        # self.control = (-1/self.alpha)* self.adjointState
 
     def dumpToJson(self,FolderName,SuffixName):
 
@@ -99,11 +99,11 @@ class ProjectedGradient:
         value = 0
         newMesh = Mesh(self.mesh.points,self.mesh.triangles,self.mesh.edges,self.mesh.polygonalBoundary) 
         newMesh.setValuesAtPoints(self.control)
-        print(np.shape(newMesh.points))
         while (np.shape(newMesh.points)[0] != np.shape(exactSolutionEvaluatedAtPoints)[0]):
             newMesh.refineMesh(1)
             print("refinement ",np.shape(newMesh.points))
         error = exactSolutionEvaluatedAtPoints-newMesh.valuesAtPoints
+
         for ele,triPoints in enumerate(self.mesh.triangles):
             transformMatrix,translateVector = self.mesh.calculateTransform(ele)
             determinant = abs(np.linalg.det(transformMatrix))

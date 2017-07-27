@@ -38,14 +38,15 @@ m = Mesh(points, triangles, boundaryEdges,polBoundary)
 error = []
 error2 = []
 
-for i in range(0,3):
-    m.refineMesh(1)
+for i in range(0,1):
+    m.refineMesh(3)
     proj = ProjectedGradient(m,[0 for x in m.points], [u_d(x) for x in m.points],lam,  alpha, tol = 1e-10 )
     proj.solve()
-    proj.loadFromJson(".","6")
-    error.append([proj.mesh.getDiameter(),proj.getL2ErrorControl(proj.referenceControl)])
+    # proj.loadFromJson(".","5")
 
-# proj.dumpToJson(".","8")
+    # error2.append([proj.mesh.getDiameter(),proj.getL2ErrorControl(proj.referenceControl)])
+
+# proj.dumpToJson(".","5")
 # m.plotTriangles()
 
 # for ele,triPoints in enumerate(proj.mesh.triangles):
@@ -64,16 +65,16 @@ for i in range(0,3):
 
 fig1 = plt.figure()
 ax1 = Axes3D(fig1)
-ax1.text(0,0.5,0,"state",color="red")
+ax1.text(0,0.5,0,"control",color="red")
 ax1.plot_trisurf(proj.mesh.points[:,0],proj.mesh.points[:,1],proj.mesh.triangles,proj.control)
+
+
+fig = plt.figure()
+ax = Axes3D(fig)
+ax.text(0,0.5,0,"state",color="red")
+ax.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),proj.state)
+
 plt.show()
-
-
-# fig = plt.figure()
-# ax = Axes3D(fig)
-# ax.text(0,0.5,0,"Control",color="red")
-# ax.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),proj.control)
-
 # fig1 = plt.figure()
 # ax1 = Axes3D(fig1)
 # ax1.text(0,0.5,0,"State",color="red")
@@ -92,6 +93,5 @@ for index, e in enumerate(error2):
     if index < len(error2)-1:
         print(np.log(error2[index+1][0]/e[0])/np.log(error2[index+1][1]/e[1]))
 print("ERROR: ",error)
-plt.show()
 
 #plt.loglog([e[0] for e in error], [e[1] for e in error],'o')

@@ -92,13 +92,25 @@ class ProjectionOnR():
         self.r_test = r_h
         self.p_h_tilde = self.p_h_star - self.r_h + r_h
     
+    def rhSinLam(self,x):
+        theta =  np.arctan2(x[1],x[0])
+        
+        #negative Angles should be converted to positive Values to match the angleCOoefficient
+        if theta <0:
+            theta = 2*np.pi+theta
+        r = np.linalg.norm(x)
+        if r<= 1e-15:
+            return 0
+        else:
+            return r**(-self.angleCoefficient) * np.sin(self.angleCoefficient*theta)
+
     def calculateNormPTildeSquared(self):
         """
         """
         value = 0
         for elem,triPoints in enumerate(self.mesh.triangles):
-            femFuncOverElement = self.integrator.getFiniteElementFunctionOverTriangle(self.p_h_tilde,elem)
-            value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElement(x)**2,elem,self.degreeOfGauss)
+            femFuncOverElement = self.integrator.getFiniteElementFunctionOverTriangle(self.p_h_star - self.r_h,elem)
+            value += self.integrator.getIntegralOverTriangleGauss(lambda x : (femFuncOverElement(x)+self.rhSinLam(x))**2,elem,self.degreeOfGauss)
             # print([self.mesh.points[x] for x in triPoints])
         print("NormPTildeSquared : ",value)
         self.normPTildeSquared = value
@@ -106,8 +118,10 @@ class ProjectionOnR():
     def getProjectionOnR(self):
         value = 0
         for elem,triPoints in enumerate(self.mesh.triangles):
-            femFuncOverElement = self.integrator.getFiniteElementFunctionOverTriangle(self.p_h_tilde*self.functionValuesToProject,elem)
-            value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElement(x),elem,self.degreeOfGauss)
+            femFuncOverElementOfProjection = self.integrator.getFiniteElementFunctionOverTriangle(self.functionValuesToProject,elem)
+            femFuncOverElementOfPTildeHalf= self.integrator.getFiniteElementFunctionOverTriangle(self.p_h_star-self.r_h,elem)
+            value += self.integrator.getIntegralOverTriangleGauss(lambda x : femFuncOverElementOfProjection(x)*(femFuncOverElementOfPTildeHalf(x)+self.rhSinLam(x)),elem,self.degreeOfGauss)
 
         coefficientOfPs = value/self.normPTildeSquared
+        print("Coef",coefficientOfPs)
         return self.functionValuesToProject - coefficientOfPs * self.p_h_tilde

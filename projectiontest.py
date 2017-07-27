@@ -18,6 +18,17 @@ lam = 2/3.0
 #exact solution
 sol = lambda x : 0 
 # sol = lambda x : np.exp(x[0]+0.2*x[1])
+def rhSinLam(x):
+        theta =  np.arctan2(x[1],x[0])
+        
+        #negative Angles should be converted to positive Values to match the angleCOoefficient
+        if theta <0:
+            theta = 2*np.pi+theta
+        r = np.linalg.norm(x)
+        if r<= 1e-15:
+            return 0
+        else:
+            return r**(-lam) * np.sin(lam*theta)
 
 #right handside calculated to match exact solution
 def u(x):
@@ -34,15 +45,17 @@ triangles = [[0,1,2],[0,2,3],[0,3,8],[0,8,5],[8,3,4],[8,4,5],[0,5,6],[0,6,7]]
 boundaryEdges = [[[0,1],0],[[1,2],1],[[2,0],None],[[2,3],2],[[3,0],None],[[3,8],None],[[8,0],None],[[8,5],None],[[3,4],2],[[8,4],None],[[4,5],3],[[5,0],None],[[5,6],3],[[6,0],None],[[6,7],4],[[7,0],5]]
 m = Mesh(points, triangles, boundaryEdges, polBoundary)
 error = []
-m.refineMesh(4)
+m.refineMesh(5)
 # m.plotTriangles()
-projR= ProjectionOnR(angleCoefficient = lam,mesh= m,indexOfNonConvexCorner = 0,functionValuesToProject = [q(x) for x in m.points] )
+projR= ProjectionOnR(angleCoefficient = lam,mesh= m,indexOfNonConvexCorner = 0,functionValuesToProject = [rhSinLam(x) for x in m.points] )
 
-projR.degreeOfGauss = 3
+projR.functionValuesToProject = projR.p_h_tilde
+projR.degreeOfGauss = 6
 
 projR.calculateR_h()
 projR.calculatePStar()
 projR.calculatePTilde()
+projR.functionValuesToProject = projR.p_h_tilde
 
 maxIndex,maxValue = max(enumerate(projR.p_h_tilde.tolist()),key=operator.itemgetter(1))
 print(maxIndex,maxValue)
@@ -54,7 +67,7 @@ proR = projR.getProjectionOnR()
 fig = plt.figure()
 ax = Axes3D(fig)
 ax.text(0.5,0.5,1,"control",color="red")
-ax.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),projR.p_h_tilde)
+ax.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),proR)
 
 # fig1 = plt.figure()
 # ax1 = Axes3D(fig1)

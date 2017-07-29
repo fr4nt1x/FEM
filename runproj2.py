@@ -35,9 +35,9 @@ m = Mesh(points, triangles, boundaryEdges,polBoundary)
 error = []
 error2 = []
 
-for i in range(0,4):
-    m.refineMesh(1)
-    proj = ProjectedGradient(mesh=m,startControl=np.array([0 for x in m.points]),uDesired= [u_d(x) for x in m.points],angleCoefficient=lam, alpha= alpha, tol = 1e-10,maxSteps=10 )
+for i in range(0,1):
+    # m.refineMesh(3)
+    proj = ProjectedGradient(mesh=m,startControl=np.array([0 for x in m.points]),uDesired= [u_d(x) for x in m.points],angleCoefficient=lam, alpha= alpha, tol = 1e-10,maxSteps=1 )
     proj.solve()
     proj.loadFromJson(".","5")
 

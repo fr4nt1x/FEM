@@ -36,7 +36,7 @@ class ProjectionOnR():
     def __init__(self,angleCoefficient,mesh,indexOfNonConvexCorner,functionValuesToProject):
         """
         """
-        self.degreeOfGauss = 5
+        self.degreeOfGauss = 1
         self.mesh = mesh
         self.numberOfPoints = np.shape(self.mesh.points)[0]
         self.functionValuesToProject = functionValuesToProject
@@ -99,7 +99,8 @@ class ProjectionOnR():
         if theta <0:
             theta = 2*np.pi+theta
         r = np.linalg.norm(x)
-        if r<= 1e-15:
+        if r<= 1e-20:
+            print("zeros")
             return 0
         else:
             return r**(-self.angleCoefficient) * np.sin(self.angleCoefficient*theta)

@@ -122,23 +122,6 @@ class Mesh:
         plt.triplot(self.points[:,0],self.points[:,1],self.triangles)
         plt.show()
     
-    def getEdges(self):
-        # listOfEdges holds a list of all the edges and which triangle they belong to  
-        listOfEdges = []
-
-        for index, triangle in enumerate(self.triangles):
-            edge1 = [triangle[0],triangle[1]]
-            edge2 = [triangle[1],triangle[2]]
-            edge3 = [triangle[2],triangle[0]]
-            
-            newEdges = [edge1,edge2,edge3]
-            
-            for edge in newEdges:
-                reversedEdge = [x for x in reversed(edge)]
-                if reversedEdge not in listOfEdges:
-                    listOfEdges.append(edge)
-        return listOfEdges
-
     def findIndexOfEdge(self,oldEdges,edge):
         #1 says orientation in triangles == in self.edges 
         #0 not
@@ -148,81 +131,6 @@ class Mesh:
             elif edg == [x for x in reversed(edge)]:
                 return [index,0]
 
-    def generateNewTrianglesHalf(self,oldEdges, newPoints):
-        #newPoints hold the index of the new points
-        newTriangles = []
-        newTrianglesWithEdges = []
-        for triIndex, triangle in enumerate(self.triangles):
-            #hold the indices of the edges for the oldedges
-            triangleEdges= self.trianglesWithEdges[triIndex]
-            newTrianglePoints = []
-            # triangleEdges = []
-            # for i in range(0,3):
-                # triangleEdges.append([triangle[i],triangle[(i+1)%3]])
-
-            newTrianglePoint = None
-
-            for edge in triangleEdges:
-                # print(edge[0])
-                if edge[0] in oldEdges:
-                    newTrianglePoint= newPoints[oldEdges.index(edge[0])]
-            # print(newTrianglePoint)
-
-            # triangleEdges = [edge[0] for edge in triangleEdges]
-            #append the edges that are in the middle of the old triangles and remember their index in self.edges
-            lengthOfEdges = len(self.edges)
-            newEdgeIndices = [lengthOfEdges+i for i in range(0,3)]
-
-            self.edges.append([[newTrianglePoints[0],newTrianglePoints[1]],None])
-
-            self.edges.append([[newTrianglePoints[1],newTrianglePoints[2]],None])
-            self.edges.append([[newTrianglePoints[2],newTrianglePoints[0]],None])
-
-            # print("Oldedges:", oldEdges)
-            # print("edges:",[e[0] for e in self.edges])
-            # print("newEdge",newEdgeIndices)
-
-            #bottom left triangle
-
-            newTriangles.append([triangle[0],newTrianglePoints[0],newTrianglePoints[2]])
-            orient0 = triangleEdges[0][1]
-            orient2 = triangleEdges[2][1]
-            index0 = 2*triangleEdges[0][0] +(1+orient0)%2
-            index2 = 2*triangleEdges[2][0] +(orient2)%2
-            newTrianglesWithEdges.append([[index0,orient0],[newEdgeIndices[2],0],[index2,orient2]])
-            
-
-            #middle triangle
-            newTriangles.append([newTrianglePoints[0],newTrianglePoints[1],newTrianglePoints[2]])
-            newTrianglesWithEdges.append([[newEdgeIndices[0],1],[newEdgeIndices[1],1],[newEdgeIndices[2],1]])
-
-            #right bottom triangle
-            orient0 = triangleEdges[0][1]
-            orient1 = triangleEdges[1][1]
-            index0 = 2*triangleEdges[0][0] +(orient0)%2
-            index1 = 2*triangleEdges[1][0] +(1+orient1)%2
-            newTriangles.append([newTrianglePoints[0],triangle[1],newTrianglePoints[1]])
-  
-            newTrianglesWithEdges.append([[index0,orient0],[index1,orient1],[newEdgeIndices[0],0]])
-
-            #top triangle
-            orient1 = triangleEdges[1][1]
-            orient2 = triangleEdges[2][1]
-            index1 = 2*triangleEdges[1][0] +(orient1)%2
-            index2 = 2*triangleEdges[2][0] +(1+orient2)%2
-            newTriangles.append([newTrianglePoints[1],triangle[2],newTrianglePoints[2]])
-            newTrianglesWithEdges.append([[index1,orient1],[index2,orient2],[newEdgeIndices[1],0]])
-    
-        self.triangles = newTriangles
-        self.trianglesWithEdges = newTrianglesWithEdges
-        # print("POINTS:")
-        # print(self.points)
-        # print("EDGES:")
-        # print([e[0] for e in self.edges])
-        # print("TRIANGLES:")
-        # pprint.pprint(self.triangles)
-        # print("TRIANGLESWITHEDGES")
-        # pprint.pprint(self.trianglesWithEdges)
 
     def generateNewTriangles(self,oldEdges, newPoints):
         #newPoints hold the index of the new points
@@ -347,6 +255,7 @@ class Mesh:
             self.points = newPoints
             self.valuesAtPoints=newValues 
             self.edges = newEdges
+
             self.generateNewTriangles(listOfEdges,indexOfNewPoints)
             self.boundaryValues = self.generateBoundaryValues()
             self.diam = self.diam*0.5
@@ -355,22 +264,98 @@ class Mesh:
 
     def getEdgesToRefine(self):
         edgesToRefine = []
-        for tri in self.triangles:
+        for triIndex,tri in enumerate(self.triangles):
             lenEdge = []
             lenEdge.append(np.linalg.norm(self.points[tri[0]] - self.points[tri[1]]))
             lenEdge.append(np.linalg.norm(self.points[tri[1]] - self.points[tri[2]]))
             lenEdge.append(np.linalg.norm(self.points[tri[2]] - self.points[tri[0]]))
             maxIndex,Value = max(enumerate(lenEdge),key= operator.itemgetter(1))  
+            maxIndex = self.trianglesWithEdges[triIndex][maxIndex][0]
             if maxIndex not in edgesToRefine:
                 edgesToRefine.append(maxIndex)
         return [self.edges[e][0] for e in edgesToRefine]
 
+
+    def generateNewTrianglesHalf(self,oldEdges, newPoints, memberOldEdges):
+        #newPoints hold the index of the new points
+        newTriangles = []
+        newTrianglesWithEdges = []
+        onlyOldEdges = [e[0] for e in memberOldEdges]
+        for triIndex, triangle in enumerate(self.triangles):
+            #hold the indices of the edges for the oldedges
+            triangleEdges= self.trianglesWithEdges[triIndex]
+            print("tirEdges",triangleEdges)
+            newTrianglePoints = []
+            # triangleEdges = []
+            # for i in range(0,3):
+                # triangleEdges.append([triangle[i],triangle[(i+1)%3]])
+
+            newTrianglePoint = None
+            indexOfRefinedEdgeInTriangle = None
+            for indexEdge,edge in enumerate(triangleEdges):
+                if onlyOldEdges[edge[0]] in oldEdges :
+                    indexOfRefinedEdgeInTriangle = indexEdge
+                    indexInListOFRefinedEdges = oldEdges.index(onlyOldEdges[edge[0]])
+                    newTrianglePoint= newPoints[oldEdges.index(onlyOldEdges[edge[0]])]
+            # print(newTrianglePoint)
+
+            # triangleEdges = [edge[0] for edge in triangleEdges]
+
+
+            # print("Oldedges:", oldEdges)
+            # print("edges:",[e[0] for e in self.edges])
+            # print("newEdge",newEdgeIndices)
+            #index of the new edge in the interior of tht trianlge 
+            newEdgeIndex= len(self.edges)
+
+            self.edges.append([[newTrianglePoint,triangle[(indexOfRefinedEdgeInTriangle+2)%3]],None])
+            # print([newTrianglePoint,triangle[(indexOfRefinedEdgeInTriangle+2)%3]])
+
+            leftEdgePoint = triangle[indexOfRefinedEdgeInTriangle]
+            rightEdgePoint = triangle[(indexOfRefinedEdgeInTriangle+1)%3]
+            notAtEdgePoint = triangle[(indexOfRefinedEdgeInTriangle+2)%3]
+
+            refinedEdge= triangleEdges[indexOfRefinedEdgeInTriangle]
+            secondEdge = triangleEdges[(indexOfRefinedEdgeInTriangle+1)%3]
+            thirdEdge= triangleEdges[(indexOfRefinedEdgeInTriangle+2)%3]
+
+            newTriangles.append([leftEdgePoint,newTrianglePoint,notAtEdgePoint])
+            orient0 = refinedEdge[1]
+            index0 = refinedEdge[0]+((orient0+1)%2)*indexInListOFRefinedEdges
+
+            orient2 = thirdEdge[1]
+            index2 = thirdEdge[0]
+
+            newTrianglesWithEdges.append([[index0,orient0],[newEdgeIndex,1],[index2,orient2]])
+            
+
+            #right triangle
+            newTriangles.append([newTrianglePoint,rightEdgePoint,notAtEdgePoint])
+            orient0 = refinedEdge[1]
+            index0 = refinedEdge[0]+((orient0+1)%2)*indexInListOFRefinedEdges
+
+            orient1 = secondEdge[1]
+            index1 = secondEdge[0]
+
+            newTrianglesWithEdges.append([[index0,orient0],[index1,orient1],[newEdgeIndex,0]])
+
+        self.triangles = newTriangles
+        self.trianglesWithEdges = newTrianglesWithEdges
+        # print("POINTS:")
+        # print(self.points)
+        # print("EDGES:")
+        # print([e[0] for e in self.edges])
+        # print("TRIANGLES:")
+        # pprint.pprint(self.triangles)
+        # print("TRIANGLESWITHEDGES")
+        # pprint.pprint(self.trianglesWithEdges)
 
     def refineMeshHalf(self,refinementSteps):
         for step in range(1,refinementSteps+1):
             print("Step : " +str(step) + "/" +str(refinementSteps))
             listOfEdges =self.getEdgesToRefine()
             numberOfNewPoints = np.shape(listOfEdges)[0]
+            numberOfOldEdges=len(self.edges) 
             numberOfOldPoints =  np.shape(self.points)[0]
             newPoints = np.zeros([numberOfNewPoints + numberOfOldPoints,2])
             newPoints[0:numberOfOldPoints,:] = self.points 
@@ -378,28 +363,40 @@ class Mesh:
             newValues[0:numberOfOldPoints] = self.valuesAtPoints
             newTriangles = [] 
             indexOfNewPoints = []
-            newEdges = [None]*(2*numberOfNewPoints)  
+            #keep all indices of the old edges, and put the right of the new edges at the end of edges
+            newEdges = [None]*(numberOfOldEdges+numberOfNewPoints)  
             newBoundaryValues = []
+            numberOfProcessedNewEdges= 0
+            for index,edgeBound in enumerate( self.edges):
+                edge= edgeBound[0]
+                
+                print("edge: ",edge)
+                
+                print("index", index)
+                if edge not in listOfEdges:
+                    newEdges[index] = edgeBound
+                    continue
 
-            for index,edge in enumerate(listOfEdges):
-                # print("edge: ",edge)
                 firstPoint = self.points[int(edge[0])]
                 secondPoint = self.points[int(edge[1])]
                 newPoint = 0.5 * (firstPoint + secondPoint) 
                 firstValue= self.valuesAtPoints[int(edge[0])]
                 secondValue= self.valuesAtPoints[int(edge[1])]
                 newValue= 0.5 * (firstValue+ secondValue) 
-                newIndex = numberOfOldPoints + index
-                newEdges[2*index] = [[int(edge[0]),newIndex],self.edges[index][1]] 
-                newEdges[2*index+1] = [[newIndex,int(edge[1])],self.edges[index][1]] 
+                newIndex = numberOfOldPoints + numberOfProcessedNewEdges
+                newEdges[index] = [[int(edge[0]),newIndex],edgeBound[1]] 
+                newEdges[index+numberOfProcessedNewEdges+1] = [[newIndex,int(edge[1])],edgeBound[1]] 
                 newPoints[newIndex,:] = newPoint 
                 newValues[newIndex] = newValue
                 indexOfNewPoints.append(newIndex)
+                numberOfProcessedNewEdges +=1
+            pprint.pprint(newEdges)
                     
             self.points = newPoints
             self.valuesAtPoints=newValues 
+            oldEdges = self.edges
             self.edges = newEdges
-            self.generateNewTrianglesHalf(listOfEdges,indexOfNewPoints)
+            self.generateNewTrianglesHalf(listOfEdges,indexOfNewPoints,oldEdges)
             self.boundaryValues = self.generateBoundaryValues()
             self.diam = self.diam*0.5
         print("Refinement Done")

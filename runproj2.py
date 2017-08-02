@@ -23,12 +23,12 @@ u_d = lambda x : state(x)
 def boundaryFunc(x):
     return 0;
 
-points = np.array([[0,0],[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[-0.5,0.5]])
+points = np.array([[0,0],[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1]])
 polBoundary= PolygonalBoundary(points, [boundaryFunc]*np.shape(points)[0])
-triangles = [[0,1,2],[0,2,3],[0,3,8],[0,8,5],[8,3,4],[8,4,5],[0,5,6],[0,6,7]] 
+triangles = [[0,1,2],[0,2,3],[0,3,4],[0,4,5],[0,5,6],[0,6,7]] 
 #the boundary edges holds all the edges of each traingle, as a  pair of an edge and 
 #the index of the polygonalBoundary it belongs to.
-boundaryEdges = [[[0,1],0],[[1,2],1],[[2,0],None],[[2,3],2],[[3,0],None],[[3,8],None],[[8,0],None],[[8,5],None],[[3,4],2],[[8,4],None],[[4,5],3],[[5,0],None],[[5,6],3],[[6,0],None],[[6,7],4],[[7,0],5]]
+boundaryEdges = [[[0,1],0],[[1,2],1],[[2,0],None],[[2,3],2],[[3,0],None],[[3,4],2],[[4,0],None],[[4,5],3],[[5,0],None],[[5,6],3],[[6,0],None],[[6,7],4],[[7,0],5]]
 m = Mesh(points, triangles, boundaryEdges,polBoundary)
 # m.plotTriangles()
 
@@ -36,12 +36,12 @@ error = []
 error2 = []
 
 for i in range(0,1):
-    # m.refineMesh(3)
+    m.refineMesh(3)
     proj = ProjectedGradient(mesh=m,startControl=np.array([0 for x in m.points]),uDesired= [u_d(x) for x in m.points],angleCoefficient=lam, alpha= alpha, tol = 1e-10,maxSteps=1 )
     proj.solve()
-    proj.loadFromJson(".","5")
+    # proj.loadFromJson(".","5")
 
-    error2.append([proj.mesh.getDiameter(),proj.getL2ErrorControl(proj.referenceControl)])
+    # error2.append([proj.mesh.getDiameter(),proj.getL2ErrorControl(proj.referenceControl)])
 
 # proj.dumpToJson(".","5")
 # m.plotTriangles()

@@ -235,7 +235,6 @@ class Mesh:
             newTriangles = [] 
             indexOfNewPoints = []
             newEdges = [None]*(2*numberOfNewPoints)  
-            newBoundaryValues = []
 
             for index,edge in enumerate(listOfEdges):
                 # print("edge: ",edge)
@@ -369,7 +368,7 @@ class Mesh:
             indexOfNewPoints = [None]*numberOfNewPoints
             #keep all indices of the old edges, and put the right of the new edges at the end of edges
             newEdges = [None]*(numberOfOldEdges+numberOfNewPoints)  
-            newBoundaryValues = []
+
             for index,edgeBound in enumerate( self.edges):
                 edge= edgeBound[0]
                 
@@ -398,5 +397,6 @@ class Mesh:
             self.edges = newEdges
             self.generateNewTrianglesHalf(listOfEdges,indexOfNewPoints,oldEdges)
             self.boundaryValues = self.generateBoundaryValues()
-            self.diam = self.diam*0.5
+            self.diam =self.getDiameter() 
+            print(self.diam)
         print("Refinement Done")

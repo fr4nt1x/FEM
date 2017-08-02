@@ -354,6 +354,22 @@ class Mesh:
         # pprint.pprint(self.trianglesWithEdges)
 
     def refineMeshHalf(self,refinementSteps):
+        """
+        Refines the Mehs via bisection of the longest edge,
+        at the time only works if listOfEdges only holds one edge of each triangle.
+        This is not guaranteed.
+        New Points will be appended at the end of the list, according to the order their
+        edges appear in listOfEdges.
+        New Edges which lie on an old edge will be indexed according to:
+        -the left edge (according to the orientation of the old edge) keeps the index 
+        of the old edge.
+        -the right Edge will be appended at the end (i.e starting at length of 
+        the Old Edges list.). The order will again be as in listOfEdges .
+        New Interior Edges will be appended at the end of the edge list. (after 
+        the before mentioned were already added.) Their Order keeps the order of the
+        triangles in which they lie.
+
+        """
         for step in range(1,refinementSteps+1):
             print("Step : " +str(step) + "/" +str(refinementSteps))
             listOfEdges =self.getEdgesToRefine()

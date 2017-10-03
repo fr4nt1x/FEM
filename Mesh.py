@@ -366,8 +366,8 @@ class Mesh:
         -the right Edge will be appended at the end (i.e starting at length of 
         the Old Edges list.). The order will again be as in listOfEdges .
         New Interior Edges will be appended at the end of the edge list. (after 
-        the before mentioned were already added.) Their Order keeps the order of the
-        triangles in which they lie.
+        the before mentioned were already added.) As before their Ordering keeps the 
+        order of listOfEdges.
 
         """
         for step in range(1,refinementSteps+1):

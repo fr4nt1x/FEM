@@ -116,6 +116,16 @@ class ProjectionOnR():
         print("NormPTildeSquared : ",value)
         self.normPTildeSquared = value
 
+    def getL2ErrorProjectionGauss(self,exactSolution):
+        GInteg = self.integrator
+        value = 0
+        exactSolEvaluated = np.array([exactSolution(x) for x in self.mesh.points])
+        errorEvaluated = (self.getProjectionOnR()-exactSolEvaluated)**2
+        for ele,triPoints in enumerate(self.mesh.triangles):
+            g= GInteg.getFiniteElementFunctionOverTriangle(errorEvaluated,ele)
+            value  += GInteg.getIntegralOverTriangleGauss(g,ele,3)    
+        return np.sqrt(value)
+
     def getProjectionOnR(self):
         value = 0
         for elem,triPoints in enumerate(self.mesh.triangles):

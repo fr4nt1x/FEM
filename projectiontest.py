@@ -45,28 +45,22 @@ triangles = [[0,1,2],[0,2,3],[0,3,8],[0,8,5],[8,3,4],[8,4,5],[0,5,6],[0,6,7]]
 boundaryEdges = [[[0,1],0],[[1,2],1],[[2,0],None],[[2,3],2],[[3,0],None],[[3,8],None],[[8,0],None],[[8,5],None],[[3,4],2],[[8,4],None],[[4,5],3],[[5,0],None],[[5,6],3],[[6,0],None],[[6,7],4],[[7,0],5]]
 m = Mesh(points, triangles, boundaryEdges, polBoundary)
 error = []
-m.refineMesh(5)
+for i in range(0,4):
+    m.refineMesh(1)
 # m.plotTriangles()
-projR= ProjectionOnR(angleCoefficient = lam,mesh= m,indexOfNonConvexCorner = 0,functionValuesToProject = [rhSinLam(x) for x in m.points] )
-
-projR.functionValuesToProject = projR.p_h_tilde
-projR.degreeOfGauss = 6
-
-projR.calculateR_h()
-projR.calculatePStar()
-projR.calculatePTilde()
-projR.functionValuesToProject = projR.p_h_tilde
-
-maxIndex,maxValue = max(enumerate(projR.p_h_tilde.tolist()),key=operator.itemgetter(1))
-print(maxIndex,maxValue)
-print(projR.mesh.points[maxIndex])
-projR.calculateNormPTildeSquared()
-proR = projR.getProjectionOnR()
+    projR= ProjectionOnR(angleCoefficient = lam,mesh= m,indexOfNonConvexCorner = 0,functionValuesToProject = [q(x) for x in m.points] )
+    projR.degreeOfGauss = 3
+    projR.calculateR_h()
+    projR.calculatePStar()
+    projR.calculatePTilde()
+    projR.calculateNormPTildeSquared()
+    proR = projR.getProjectionOnR()
+    error.append([projR.mesh.getDiameter(),projR.getL2ErrorProjectionGauss(q)])
 #Plots the Fem solution
 
 fig = plt.figure()
 ax = Axes3D(fig)
-ax.text(0.5,0.5,1,"control",color="red")
+ax.text(0.5,0.5,1,"discrete sol",color="red")
 ax.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),proR)
 
 # fig1 = plt.figure()
@@ -79,6 +73,10 @@ ax.plot_trisurf(m.points[:,0],m.points[:,1],m.triangles.copy(),proR)
 # ax1 = Axes3D(fig1)
 # ax1.text(0.5,0.5,1,"exact - solution",color="red")
 # ax1.plot_trisurf(Fem.triangulation.points[:,0],Fem.triangulation.points[:,1],Fem.triangulation.triangles.copy(),[sol(x) for x in Fem.triangulation.points])
+print("Error:",error)
+for index, e in enumerate(error):
+    if index < len(error)-1:
+        print(np.log(error[index+1][0]/e[0])/np.log(error[index+1][1]/e[1]))
 
 # plt.loglog([e[0] for e in error], [e[1] for e in error],'o')
 plt.show()
